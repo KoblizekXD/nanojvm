@@ -1,0 +1,3 @@
+[submodule "lib/classparse"]
+	path = lib/classparse
+	url = https://github.com/KoblizekXD/classparse.git

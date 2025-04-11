@@ -3,6 +3,7 @@ PROJECT_NAME := nanojvm
 SRC_DIR := src
 BUILD_DIR := build
 BIN_DIR := bin
+LIB_DIR := lib
 
 # ===== Toolchain Configuration =====
 CC := gcc
@@ -27,20 +28,21 @@ OBJS := $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS)
 DEPS := $(OBJS:.o=.d)
 
 # ===== Compiler Flags =====
-COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -MMD -MP
+COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -I $(LIB_DIR)/classparse/src/ -MMD -MP
+COMMON_LD_FLAGS := -L $(LIB_DIR)/classparse/build/ -rdynamic -lclassparse -pthread
 
 ifeq ($(BUILD_MODE),prod)
     OPT_FLAGS := -O3 -flto -DNDEBUG
-    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS)
-    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++17
+    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=gnu11
+    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++11
     ASMFLAGS := -f elf64
-    LDFLAGS := $(OPT_FLAGS)
+    LDFLAGS := $(OPT_FLAGS) $(COMMON_LD_FLAGS)
 else
     OPT_FLAGS := -Og -g3 -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
-    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS)
-    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++17
+    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=gnu11
+    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++11
     ASMFLAGS := -f elf64 -g -F dwarf
-    LDFLAGS := $(OPT_FLAGS) -fsanitize=address,undefined
+    LDFLAGS := $(OPT_FLAGS) $(COMMON_LD_FLAGS)
 endif
 
 # ===== Targets Configuration =====
