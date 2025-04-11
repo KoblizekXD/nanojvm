@@ -58,12 +58,15 @@ $(TARGET): $(OBJS) | $(BIN_DIR)
 	$(LINKER) $^ -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	@mkdir -p "$$(dirname $@)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@mkdir -p "$$(dirname $@)"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm | $(BUILD_DIR)
+	@mkdir -p "$$(dirname $@)"
 	$(ASM) $(ASMFLAGS) $< -o $@
 
 $(BUILD_DIR) $(BIN_DIR):
