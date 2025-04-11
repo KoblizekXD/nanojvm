@@ -1,0 +1,97 @@
+# ===== Project Configuration =====
+PROJECT_NAME := nanojvm
+SRC_DIR := src
+BUILD_DIR := build
+BIN_DIR := bin
+
+# ===== Toolchain Configuration =====
+CC := gcc
+CXX := g++
+ASM := nasm
+LINKER := gcc
+
+# ===== Build Mode Configuration =====
+# Available modes: dev, prod
+BUILD_MODE ?= dev
+
+# ===== Source File Detection =====
+C_SRCS := $(shell find $(SRC_DIR) -name '*.c')
+CPP_SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
+ASM_SRCS := $(shell find $(SRC_DIR) -name '*.asm')
+
+# ===== Object/Dependency Files =====
+C_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(C_SRCS:.c=.o))
+CPP_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(CPP_SRCS:.cpp=.o))
+ASM_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(ASM_SRCS:.asm=.o))
+OBJS := $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS)
+DEPS := $(OBJS:.o=.d)
+
+# ===== Compiler Flags =====
+COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -MMD -MP
+
+ifeq ($(BUILD_MODE),prod)
+    OPT_FLAGS := -O3 -flto -DNDEBUG
+    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS)
+    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++17
+    ASMFLAGS := -f elf64
+    LDFLAGS := $(OPT_FLAGS)
+else
+    OPT_FLAGS := -Og -g3 -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
+    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS)
+    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++17
+    ASMFLAGS := -f elf64 -g -F dwarf
+    LDFLAGS := $(OPT_FLAGS) -fsanitize=address,undefined
+endif
+
+# ===== Targets Configuration =====
+TARGET := $(BIN_DIR)/$(PROJECT_NAME)
+
+TARGET_WIN32 := $(BIN_DIR)/$(PROJECT_NAME).exe
+TARGET_WASM := $(BIN_DIR)/$(PROJECT_NAME).wasm
+
+# ===== Build Rules =====
+all: $(TARGET)
+
+$(TARGET): $(OBJS) | $(BIN_DIR)
+	$(LINKER) $^ -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm | $(BUILD_DIR)
+	$(ASM) $(ASMFLAGS) $< -o $@
+
+$(BUILD_DIR) $(BIN_DIR):
+	mkdir -p $@
+
+-include $(DEPS)
+
+# ===== Utility Targets =====
+.PHONY: clean rebuild run debug
+
+clean:
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
+
+rebuild: clean all
+
+run: all
+	./$(TARGET)
+
+debug: all
+	gdb $(TARGET)
+
+# ===== Additional Targets (Extensible) =====
+win32: CC := x86_64-w64-mingw32-gcc
+win32: CXX := x86_64-w64-mingw32-g++
+win32: LINKER := x86_64-w64-mingw32-g++
+win32: TARGET := $(TARGET_WIN32)
+win32: all
+
+wasm: CC := emcc
+wasm: CXX := em++
+wasm: LINKER := em++
+wasm: TARGET := $(TARGET_WASM)
+wasm: all
