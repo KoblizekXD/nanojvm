@@ -23,7 +23,7 @@ ThreadFrame *push_frame(VirtualMachine *vm, Method *method, ExStack *lvars, ExSt
     return &t->frames[t->frame_count - 1];
 }
 
-ThreadFrame* pop_frame(VirtualMachine *vm) 
+ThreadFrame* pop_frame(VirtualMachine *vm, Item *to_push) 
 {
     Thread *t = GetCurrent(vm);
 
@@ -50,6 +50,7 @@ ThreadFrame* pop_frame(VirtualMachine *vm)
         ThreadFrame *new_frames = realloc(t->frames, t->frame_count * sizeof(ThreadFrame));
         if (new_frames) {
             t->frames = new_frames;
+            if (to_push != NULL) PushStack(t->frames[t->frame_count - 1].opstack, to_push);
         } else {
             warn("pop_frame: realloc failed (leaking memory)");
         }
@@ -83,8 +84,13 @@ Item *ExecuteMethodBytecode(VirtualMachine *vm, Method *method, ExStack *lvars, 
     }
 
     ThreadFrame *frame = push_frame(vm, method, lvars, opstack);
-    execute_internal(vm, frame);
-    pop_frame(vm);
+    Item *i = execute_internal(vm, frame);
+    
+    if (i == NULL && GetReturnType(method) != 'V') {
+        error("Unexpected return of void");
+    }
+
+    pop_frame(vm, i);
 
     return NULL;
 }
