@@ -1,4 +1,5 @@
 #include <mem/heap.h>
+#include <stdint.h>
 #include <util/logging.h>
 
 #include <string.h>
@@ -112,6 +113,52 @@ void Free(Heap *heap, HeapRegion *region)
     assert(previous != NULL);
     previous->next = region->next;
     prepare_region(heap, region, region->size, 0);
+}
+
+static void update_list(HeapRegion **list, long diff) 
+{
+    HeapRegion *prev = NULL;
+    HeapRegion *current = *list;
+    
+    while (current != NULL) {
+        if (diff != 0) {
+            current = (HeapRegion *)((uint8_t *)current + diff);
+        }
+
+        if (prev != NULL) {
+            prev->next = current;
+        } else {
+            *list = current;
+        }
+
+        prev = current;
+        current = current->next;
+    }
+}
+
+void ExpandHeap(Heap *heap, size_t new_size)
+{
+    size_t old_size = heap->size;
+    if (heap == NULL || heap->raw == NULL || heap->size > new_size) {
+        return;
+    }
+
+    uint8_t *old_raw = heap->raw;
+    uint8_t *new_raw = realloc(heap->raw, new_size);
+    
+    if (new_raw == NULL) {
+        return;
+    }
+
+    long diff = new_raw - old_raw;
+
+    heap->raw = new_raw;
+    heap->size = new_size;
+
+    update_list(&heap->allocated, diff);
+    update_list(&heap->free, diff);
+
+    prepare_region(heap, (uint8_t*) heap->raw + old_size, new_size - old_size, 0);
 }
 
 #define COLOR_FREE "\x1b[42m"
