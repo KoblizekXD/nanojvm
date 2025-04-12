@@ -3,7 +3,6 @@
 
 #include <util/exstack.h>
 
-static inline void AssertVariableMetadata(Item *var, uint8_t metadata);
 void AssertByte(Item *var);
 void AssertShort(Item *var);
 void AssertInt(Item *var);

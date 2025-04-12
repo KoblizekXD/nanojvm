@@ -46,6 +46,8 @@ void     PushStack(ExStack *stack, Item *item);
  */
 Item    *PopStack(ExStack *stack);
 
+// Utilities to manage the stack structure
+
 int8_t  _pop_byte(ExStack *stack);
 int16_t _pop_short(ExStack *stack);
 int32_t _pop_int(ExStack *stack);
