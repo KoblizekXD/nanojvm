@@ -18,7 +18,7 @@ void log_message(int status, const char *file, int line, const char *format, ...
 #define info(message, ...) log_message(LOG_STATUS_INFO, __FILENAME__, __LINE__, message, ##__VA_ARGS__)
 #define warn(message, ...) log_message(LOG_STATUS_WARN, __FILENAME__, __LINE__, message, ##__VA_ARGS__)
 #define error(message, ...) log_message(LOG_STATUS_ERROR, __FILENAME__, __LINE__, message, ##__VA_ARGS__)
-#define debug(message, ...) log_message(LOG_STATUS_DEBUG, message, ##__VA_ARGS__)
+#define debug(message, ...) log_message(LOG_STATUS_DEBUG, __FILENAME__, __LINE__, message, ##__VA_ARGS__)
 #else
 void log_message(int status, const char *format, ...);
 

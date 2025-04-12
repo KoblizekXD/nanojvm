@@ -1,16 +1,11 @@
+#include <nanojvm.h>
 #include <mem/heap.h>
+
+VirtualMachine *vm;
 
 int main(int argc, char **argv)
 {
-    Heap *heap = InitializeHeap(1024);
-    HeapRegion *h1 = Allocate(heap, 128);
-    HeapRegion *h2 = Allocate(heap, 128);
-    HeapRegion *h3 = Allocate(heap, 128);
-    Allocate(heap, 128);
-    Allocate(heap, 128);
-    Allocate(heap, 512);
-    Free(heap, h2);
-    HeapMap(heap);
-    FreeHeap(heap);
+    vm = Initialize(NULL);
+    TearDown(vm);
     return 0;
 }

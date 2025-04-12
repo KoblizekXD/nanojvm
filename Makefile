@@ -17,6 +17,7 @@ BUILD_MODE ?= dev
 
 # ===== Source File Detection =====
 C_SRCS := $(shell find $(SRC_DIR) -name '*.c')
+C_SRCS += $(LIB_DIR)/miniz/miniz.c
 CPP_SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
 ASM_SRCS := $(shell find $(SRC_DIR) -name '*.asm')
 
@@ -28,7 +29,7 @@ OBJS := $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS)
 DEPS := $(OBJS:.o=.d)
 
 # ===== Compiler Flags =====
-COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -I $(LIB_DIR)/classparse/src/ -MMD -MP
+COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -I$(LIB_DIR)/classparse/src/ -I$(LIB_DIR)/miniz/ -MMD -MP
 COMMON_LD_FLAGS := -L $(LIB_DIR)/classparse/build/ -rdynamic -lclassparse -pthread
 
 ifeq ($(BUILD_MODE),prod)

@@ -98,6 +98,7 @@ HeapRegion *Allocate(Heap *heap, size_t size)
     }
     big_enough = prepare_region(heap, big_enough, size, 1);
 
+    debug("Allocated region of %d bytes at %p", big_enough->size, (void*) big_enough);
     return big_enough;
 }
 

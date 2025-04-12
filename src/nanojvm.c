@@ -1,0 +1,97 @@
+#include <util/logging.h>
+#include <util/strings.h>
+#include <errno.h>
+#include <classparse.h>
+#include <mem/heap.h>
+#include <nanojvm.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <miniz.h>
+#include <string.h>
+#include <vmopts.h>
+
+VirtualMachine *Initialize(const VmOptions *options)
+{
+    if (options == NULL)
+        options = &DEFAULT_OPTIONS;
+
+    VirtualMachine *vm = malloc(sizeof(VirtualMachine));
+    vm->options = options;
+    vm->loaded_classes_count = 0;
+    vm->loaded_classes = NULL;
+    vm->heap = InitializeHeap(options->heap_init);
+    vm->jdk = SetupJDK();
+    return vm;
+}
+
+void TearDown(VirtualMachine *vm)
+{
+    FreeHeap(vm->heap);
+    for (size_t i = 0; i < vm->loaded_classes_count; i++) {
+        FreeClassFile(vm->loaded_classes[i]);
+    }
+    free(vm->loaded_classes);
+    mz_zip_reader_end(vm->jdk->handle);
+    free(vm->jdk);
+}
+
+ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
+{
+    if (archive == NULL) return NULL;
+    char *combined = malloc(strlen(classname) + 7);
+    strcpy(combined, classname);
+    strcat(combined, ".class");
+    unsigned int num_files = mz_zip_reader_get_num_files(archive);
+    for (size_t i = 0; i < num_files; i++) {
+        unsigned int req = mz_zip_reader_get_filename(archive, i, NULL, 0);
+        char *name = malloc(req);
+        if (!mz_zip_reader_get_filename(archive, i, name, req)) {
+            free(name);
+            continue;
+        }
+        if (strlen(name) >= strlen(combined) && strcmp(name + (strlen(name) - strlen(combined)), combined) == 0) {
+            size_t file_size;
+            void *data = mz_zip_reader_extract_to_heap(archive, i, &file_size, 0);
+            free(name);
+            free(combined);
+            ClassFile *cf = ReadFrom(data);
+            if (strcmp(cf->name, classname) != 0) {
+                FreeClassFile(cf);
+                mz_free(data);
+                continue;
+            }
+            mz_free(data);
+            return cf;
+        }
+        free(name);
+    }
+    free(combined);
+    return NULL;
+}
+
+ClassFile *FindClass(VirtualMachine *vm, const char *name)
+{
+    ClassFile *cf = NULL;
+    if (vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
+    for (size_t i = 0; i < vm->options->classpath_len; i++) {
+        const char *str = vm->options->classpath[i];
+        if (EndsWith(str, ".class")) {
+            FILE *stream = fopen(str, "rb");
+            if (stream == NULL) {
+                warn("Cannot open stream for %s: %s", str, strerror(errno));
+                continue;
+            }
+            char *strname = PeekClassName(stream);
+            if (StringEquals(strname, name)) { 
+                cf = ReadFromStream(stream);
+                free(strname);
+                fclose(stream);
+                break;
+            }
+            free(strname);
+            fclose(stream);
+        } // Add support for other .jar(s)
+    }
+
+    return cf;
+}
