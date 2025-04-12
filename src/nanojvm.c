@@ -1,3 +1,4 @@
+#include <threads.h>
 #include <util/logging.h>
 #include <util/strings.h>
 #include <errno.h>
@@ -21,6 +22,12 @@ VirtualMachine *Initialize(const VmOptions *options)
     vm->loaded_classes = NULL;
     vm->heap = InitializeHeap(options->heap_init);
     vm->jdk = SetupJDK();
+
+    vm->thread_count = 1;
+    vm->threads = malloc(sizeof(Thread));
+    vm->threads->native_thread = thrd_current();
+    vm->threads->frames = NULL;
+    vm->threads->frame_count = 0;
     return vm;
 }
 
@@ -33,6 +40,10 @@ void TearDown(VirtualMachine *vm)
     free(vm->loaded_classes);
     mz_zip_reader_end(vm->jdk->handle);
     free(vm->jdk);
+    for (size_t i = 0; i < vm->thread_count; i++) {
+        free(vm->threads[i].frames);
+    }
+    free(vm->threads);
 }
 
 ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
@@ -90,8 +101,17 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
             }
             free(strname);
             fclose(stream);
-        } // Add support for other .jar(s)
+        } // TODO: Add support for other .jar(s)
     }
-
+    // TODO: Linking
     return cf;
+}
+
+Thread *GetCurrent(VirtualMachine *vm)
+{
+    thrd_t id = thrd_current();
+    for (size_t i = 0; i < vm->thread_count; i++) {
+        if (vm->threads[i].native_thread == id) return &vm->threads[i];
+    }
+    return NULL;
 }
