@@ -29,6 +29,8 @@ typedef struct vm_thread {
     ThreadFrame *frames;
 } Thread;
 
+#define FrameCeiling(THREAD) THREAD->frames[THREAD->frame_count - 1]
+
 typedef struct virtual_machine {
     const VmOptions *options;
     size_t loaded_classes_count;
@@ -68,6 +70,8 @@ Thread *GetCurrent(VirtualMachine *vm);
  * @return NULL if code attribute is not present or method returns void. Otherwise returns what method bytecode decides to, but wrapped in Item struct.
  */
 Item *ExecuteMethodBytecode(VirtualMachine *vm, Method *method, ExStack *lvars, ExStack *opstack);
+
+Item *InvokeMethod(VirtualMachine *vm, Method *method);
 
 JDK *SetupJDK(void);
 
