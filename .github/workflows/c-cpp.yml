@@ -1,0 +1,21 @@
+name: C/C++
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y nasm gcc g++
+    - name: Setup
+      run: ./scripts/init.sh
+    - name: Compile
+      run: make
