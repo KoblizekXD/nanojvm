@@ -39,6 +39,7 @@ void TearDown(VirtualMachine *vm)
     }
     free(vm->loaded_classes);
     mz_zip_reader_end(vm->jdk->handle);
+    free(vm->jdk->handle);
     free(vm->jdk);
     for (size_t i = 0; i < vm->thread_count; i++) {
         free(vm->threads[i].frames);
@@ -104,6 +105,12 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
         } // TODO: Add support for other .jar(s)
     }
     // TODO: Linking
+
+    if (cf == NULL) return NULL;
+    vm->loaded_classes_count++;
+    vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
+    vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
+
     return cf;
 }
 
