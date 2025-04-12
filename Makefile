@@ -22,7 +22,8 @@ CPP_SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
 ASM_SRCS := $(shell find $(SRC_DIR) -name '*.asm')
 
 # ===== Object/Dependency Files =====
-C_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(C_SRCS:.c=.o))
+C_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(filter $(SRC_DIR)/%,$(C_SRCS:.c=.o))) \
+		$(patsubst $(LIB_DIR)/%,$(BUILD_DIR)/lib/%,$(filter $(LIB_DIR)/%,$(C_SRCS:.c=.o)))
 CPP_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(CPP_SRCS:.cpp=.o))
 ASM_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(ASM_SRCS:.asm=.o))
 OBJS := $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS)
@@ -60,6 +61,10 @@ $(TARGET): $(OBJS) | $(BIN_DIR)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	@mkdir -p "$$(dirname $@)"
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/$(LIB_DIR)/miniz/miniz.o: $(LIB_DIR)/miniz/miniz.c
+	mkdir -p "$$(dirname $@)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
