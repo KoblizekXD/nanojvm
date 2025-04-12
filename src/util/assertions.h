@@ -1,7 +1,7 @@
 #ifndef NANOJVM_UTIL_ASSERTIONS_H
 #define NANOJVM_UTIL_ASSERTIONS_H
 
-#include <util/exstack.h>
+#include <mem/exstack.h>
 
 void AssertByte(Item *var);
 void AssertShort(Item *var);

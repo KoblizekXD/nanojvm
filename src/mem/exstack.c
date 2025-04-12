@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
-#include <util/exstack.h>
+#include <mem/exstack.h>
 #include <util/logging.h>
 #include <util/assertions.h>
 

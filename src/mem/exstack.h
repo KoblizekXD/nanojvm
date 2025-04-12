@@ -1,5 +1,5 @@
-#ifndef NANOJVM_UTIL_EXSTACK_H
-#define NANOJVM_UTIL_EXSTACK_H
+#ifndef NANOJVM_MEM_EXSTACK_H
+#define NANOJVM_MEM_EXSTACK_H
 
 #include <stddef.h>
 #include <stdint.h>
