@@ -6,9 +6,10 @@ int main(int argc, char **argv)
     HeapRegion *h1 = Allocate(heap, 128);
     HeapRegion *h2 = Allocate(heap, 128);
     HeapRegion *h3 = Allocate(heap, 128);
+    Allocate(heap, 128);
+    Allocate(heap, 128);
+    Allocate(heap, 512);
     Free(heap, h2);
-    HeapMap(heap);
-    ExpandHeap(heap, 2048);
     HeapMap(heap);
     FreeHeap(heap);
     return 0;

@@ -189,7 +189,9 @@ void HeapMap(Heap *heap)
         size_t end = start + (current->size + sizeof(HeapRegion) + BLOCK_SIZE - 1) / BLOCK_SIZE;
         
         for (size_t i = start; i < end && i < num_blocks; i++) {
-            visual[i] = 'F';  // Free
+            if (i == start)
+                visual[i] = 'S';
+            else visual[i] = 'F';  // Free
         }
         current = current->next;
     }
@@ -200,7 +202,9 @@ void HeapMap(Heap *heap)
         size_t end = start + (current->size + sizeof(HeapRegion) + BLOCK_SIZE - 1) / BLOCK_SIZE;
         
         for (size_t i = start; i < end && i < num_blocks; i++) {
-            visual[i] = 'A';  // Allocated
+            if (i == start)
+                visual[i] = 'T';
+            else visual[i] = 'A';  // Allocated
         }
         current = current->next;
     }
@@ -210,6 +214,10 @@ void HeapMap(Heap *heap)
             printf(COLOR_FREE " " COLOR_RESET);
         } else if (visual[i] == 'A') {
             printf(COLOR_ALLOC " " COLOR_RESET);
+        } else if (visual[i] == 'S') {
+            printf(COLOR_FREE "|" COLOR_RESET);
+        } else if (visual[i] == 'T') {
+            printf(COLOR_ALLOC "|" COLOR_RESET);
         } else {
             printf(" ");
         }
