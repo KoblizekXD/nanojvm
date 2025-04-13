@@ -103,6 +103,11 @@ ClassFile *LoadExternal(VirtualMachine *vm, const char *path)
 
 ClassFile *FindClass(VirtualMachine *vm, const char *name)
 {
+    if (vm->loaded_classes) {
+        for (size_t i = 0; i < vm->loaded_classes_count; i++) {
+            if (StringEquals(vm->loaded_classes[i]->name, name)) return vm->loaded_classes[i];
+        }
+    }
     ClassFile *cf = NULL;
     if (vm->jdk && vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
     for (size_t i = 0; i < vm->options->classpath_len; i++) {

@@ -40,7 +40,7 @@ ifeq ($(BUILD_MODE),prod)
     ASMFLAGS := -f elf64
     LDFLAGS := $(OPT_FLAGS) $(COMMON_LD_FLAGS)
 else
-    OPT_FLAGS := -Og -g3 -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
+    OPT_FLAGS := -O0 -g3 -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
     CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=gnu11
     CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++11
     ASMFLAGS := -f elf64 -g -F dwarf

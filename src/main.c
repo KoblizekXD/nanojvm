@@ -1,3 +1,4 @@
+#include "classparse.h"
 #include "util/logging.h"
 #include <vmopts.h>
 #include <nanojvm.h>
@@ -14,10 +15,19 @@ int main(int argc, char **argv)
     ClassFile *cf = LoadExternal(vm, opts.classpath[opts.classpath_len - 1]);
 
     if (!cf) {
-        error("File '%s' must be a valid classfile!", opts.classpath[opts.classpath_len - 1]);
+        error("File '%s' must be a valid classfile", opts.classpath[opts.classpath_len - 1]);
         TearDown(vm);
         return 1;
     }
+    Method *m = GetMethodByNameAndDescriptor(cf, "main", "([Ljava/lang/String;)V");
+
+    if (!m) {
+        error("File '%s' must have a valid Java entrypoint", cf->name);
+        TearDown(vm);
+        return 1;
+    }
+
+    InvokeMethod(vm, m);
 
     TearDown(vm);
     return 0;

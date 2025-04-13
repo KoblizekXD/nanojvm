@@ -14,7 +14,7 @@ ThreadFrame *push_frame(VirtualMachine *vm, Method *method, ExStack *lvars, ExSt
         return NULL;
     }
 
-    t->frames = realloc(t->frames, sizeof(t->frame_count + 1));
+    t->frames = realloc(t->frames, sizeof(ThreadFrame) * (t->frame_count + 1));
     t->frames[t->frame_count] = (ThreadFrame) {
         .opstack = opstack,
         .locals = lvars,
@@ -148,8 +148,7 @@ Item *InvokeMethod(VirtualMachine *vm, Method *method)
         return NULL;
     }
 
-    Thread *t = GetCurrent(vm);
-    ThreadFrame f = FrameCeiling(t);
+    Thread *t = GetCurrent(vm); 
     
     size_t argc = GetParameterCount(method);
     if (!(method->access_flags & ACC_STATIC)) {
@@ -158,6 +157,9 @@ Item *InvokeMethod(VirtualMachine *vm, Method *method)
 
     ExStack *opstack = CreateStack(attr->max_stack);
     ExStack *locals = CreateStack(attr->max_locals);
-    pass_parameters(locals, f.opstack, argc);
+    if (t->frame_count > 0) {
+        ThreadFrame f = FrameCeiling(t);
+        pass_parameters(locals, f.opstack, argc);
+    } 
     return ExecuteMethodBytecode(vm, method, locals, opstack);
 }

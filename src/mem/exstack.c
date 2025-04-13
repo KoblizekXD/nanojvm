@@ -7,7 +7,6 @@
 ExStack *CreateStack(size_t capacity)
 {
     ExStack *stack = malloc(sizeof(ExStack));
-    assert(capacity > 0);
     stack->capacity = capacity;
     stack->top = 0;
     stack->data = calloc(capacity, sizeof(Item*));
