@@ -32,7 +32,7 @@ typedef struct vm_thread {
 #define FrameCeiling(THREAD) THREAD->frames[THREAD->frame_count - 1]
 
 typedef struct virtual_machine {
-    const VmOptions *options;
+    VmOptions *options;
     size_t loaded_classes_count;
     ClassFile **loaded_classes;
     Heap *heap;

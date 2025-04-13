@@ -56,5 +56,6 @@ JDK *SetupJDK(void)
         else jdk->mode = 8;
     } else jdk->mode = 11;
     if (jdk->mode == 0) warn("Failed to correctly determine JDK information. Please report this as bug with your JDK installation information");
+    debug("Using %s", jdk->path);
     return jdk;
 }

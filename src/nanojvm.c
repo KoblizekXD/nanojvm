@@ -33,6 +33,7 @@ VirtualMachine *Initialize(const VmOptions *options)
 
 void TearDown(VirtualMachine *vm)
 {
+    FreeOptionsIfPossible(vm->options);
     FreeHeap(vm->heap);
     for (size_t i = 0; i < vm->loaded_classes_count; i++) {
         FreeClassFile(vm->loaded_classes[i]);
