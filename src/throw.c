@@ -25,18 +25,18 @@ int get_closest_line(ThreadFrame *frame)
 
 void print_stack_trace(Thread *thread)
 {
-    for (size_t i = thread->frame_count - 1; i >= 0; i--) {
+    for (int i = thread->frame_count - 1; i >= 0; i--) {
         ThreadFrame frame = thread->frames[i];
         AttributeInfo *src_file = GetAttributeBySyntheticIdentifier(frame.method->cf->attributes, frame.method->cf->attribute_count, ATTR_SOURCE_FILE);
         if (src_file) {
-            fprintf(stderr, "\tat %s::%s(%s:%d)\n", frame.method->cf->name, frame.method->name, *src_file->data.sourcefile.sourcefile, get_closest_line(&frame));
+            fprintf(stderr, "\t\x1b[31mat %s::%s(%s:%d)\x1b[0m\n", frame.method->cf->name, frame.method->name, *src_file->data.sourcefile.sourcefile, get_closest_line(&frame));
         } 
-        fprintf(stderr, "\tat %s::%s(line=%d, pc=0x%p)\n", frame.method->cf->name, frame.method->name, get_closest_line(&frame), (void*) frame.pc);
+        else fprintf(stderr, "\t\x1b[31mat %s::%s(line=%d, pc=0x%p)\x1b[0m\n", frame.method->cf->name, frame.method->name, get_closest_line(&frame), (void*) frame.pc);
     }
 }
 
 void ThrowException(VirtualMachine *vm, const char *type, const char *message)
 {
-    fprintf(stderr, "%s: %s\n", type, message);
+    fprintf(stderr, "\x1b[31m%s: %s\x1b[0m\n", type, message);
     print_stack_trace(GetCurrent(vm));
 }

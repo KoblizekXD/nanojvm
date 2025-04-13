@@ -4,7 +4,7 @@
 #define LOG_STATUS_INFO  32
 #define LOG_STATUS_WARN  33
 #define LOG_STATUS_ERROR 31
-#define LOG_STATUS_DEBUG 90
+#define LOG_STATUS_DEBUG 37
 
 #define LOG_STATEMENT_ALLOC_FAILED "Failure in memory allocation: "
 
