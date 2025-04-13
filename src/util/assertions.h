@@ -9,6 +9,7 @@ void AssertInt(Item *var);
 void AssertLong(Item *var);
 void AssertFloating(Item *var);
 void AssertReference(Item *var);
+void AssertReferenceNotNull(Item *var);
 void AssertCanPush(ExStack *stack);
 
 #endif

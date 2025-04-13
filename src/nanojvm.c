@@ -114,6 +114,14 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
     return cf;
 }
 
+void ForceLoad(VirtualMachine *vm, ClassFile *cf)
+{
+    if (cf == NULL) return;
+    vm->loaded_classes_count++;
+    vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
+    vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
+}
+
 Thread *GetCurrent(VirtualMachine *vm)
 {
     thrd_t id = thrd_current();

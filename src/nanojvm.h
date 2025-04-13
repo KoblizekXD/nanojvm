@@ -43,14 +43,6 @@ typedef struct virtual_machine {
     void **natives;
 } VirtualMachine;
 
-typedef struct object_region {
-    uint8_t metadata;
-    size_t size;
-    HeapRegion *next;
-    ClassFile *cf;
-    uint8_t data[];
-} ObjectRegion;
-
 // Initializes the VM, looks for JDK installation, classpath & options etc. Doesn't execute anything on its own.
 VirtualMachine *Initialize(const VmOptions *options);
 
@@ -62,6 +54,14 @@ void TearDown(VirtualMachine *vm);
  * If class is not found, NULL is returned.
  */
 ClassFile *FindClass(VirtualMachine *vm, const char *name);
+
+/**
+ * Forcibly loads class file into the VM's memory.
+ * This is useful when not using default classpath and using NanoJVM as a library.
+ * Please be aware that this function won't check if a class is already present, so it is possible
+ * to put duplicate classes inside.
+ */
+void ForceLoad(VirtualMachine *vm, ClassFile *cf);
 
 /**
  * Returns the thread matching current thread id.
@@ -85,6 +85,10 @@ Item *ExecuteMethodBytecode(VirtualMachine *vm, Method *method, ExStack *lvars, 
  */
 Item *InvokeMethod(VirtualMachine *vm, Method *method);
 
+/**
+ * Looks for a valid JDK installation, this can be later used to resolve basic Java classes.
+ * Technically not required, but is recommended.
+ */
 JDK *SetupJDK(void);
 
 #endif

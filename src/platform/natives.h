@@ -3,6 +3,7 @@
 
 #include <classparse.h>
 #include <nanojvm.h>
+#include <objects.h>
 #include <mem/exstack.h>
 #include <stddef.h>
 

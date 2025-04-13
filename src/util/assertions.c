@@ -41,6 +41,16 @@ void AssertReference(Item *var)
     AssertVariableMetadata(var, STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG);
 }
 
+void AssertReferenceNotNull(Item *var)
+{
+    void *value;
+    memcpy(&value, var->data, 8);
+    if (value == NULL) {
+        error("Internal assertion failed");
+        exit(1);
+    }
+}
+
 void AssertCanPush(ExStack *stack)
 {
     if (stack->top >= stack->capacity) {
