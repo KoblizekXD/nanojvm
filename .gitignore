@@ -4,3 +4,4 @@ bin/
 compile_commands.json
 analysis.txt
 gmon.out
+*.class

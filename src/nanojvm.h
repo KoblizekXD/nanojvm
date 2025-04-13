@@ -64,6 +64,11 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name);
 void ForceLoad(VirtualMachine *vm, ClassFile *cf);
 
 /**
+ * Loads an external classfile into the VM's memory and returns it.
+ */
+ClassFile *LoadExternal(VirtualMachine *vm, const char *path);
+
+/**
  * Returns the thread matching current thread id.
  */
 Thread *GetCurrent(VirtualMachine *vm);
