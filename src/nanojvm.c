@@ -11,18 +11,19 @@
 #include <string.h>
 #include <vmopts.h>
 
-VirtualMachine *Initialize(const VmOptions *options)
+VirtualMachine *Initialize(VmOptions *options)
 {
     if (options == NULL)
-        options = &DEFAULT_OPTIONS;
+        options = (VmOptions*) &DEFAULT_OPTIONS;
 
     VirtualMachine *vm = malloc(sizeof(VirtualMachine));
     vm->options = options;
     vm->loaded_classes_count = 0;
     vm->loaded_classes = NULL;
     vm->heap = InitializeHeap(options->heap_init);
-    vm->jdk = SetupJDK();
-
+    if (!(vm->options->flags & OPTION_DISABLE_JVM_LOOKUP))
+        vm->jdk = SetupJDK();
+    else vm->jdk = NULL;
     vm->thread_count = 1;
     vm->threads = malloc(sizeof(Thread));
     vm->threads->native_thread = thrd_current();
@@ -39,9 +40,11 @@ void TearDown(VirtualMachine *vm)
         FreeClassFile(vm->loaded_classes[i]);
     }
     free(vm->loaded_classes);
-    mz_zip_reader_end(vm->jdk->handle);
-    free(vm->jdk->handle);
-    free(vm->jdk);
+    if (vm->jdk) {
+        mz_zip_reader_end(vm->jdk->handle);
+        free(vm->jdk->handle);
+        free(vm->jdk);
+    }
     for (size_t i = 0; i < vm->thread_count; i++) {
         free(vm->threads[i].frames);
     }
@@ -85,7 +88,7 @@ ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
 ClassFile *FindClass(VirtualMachine *vm, const char *name)
 {
     ClassFile *cf = NULL;
-    if (vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
+    if (vm->jdk && vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
     for (size_t i = 0; i < vm->options->classpath_len; i++) {
         const char *str = vm->options->classpath[i];
         if (EndsWith(str, ".class")) {

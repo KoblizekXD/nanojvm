@@ -44,7 +44,7 @@ typedef struct virtual_machine {
 } VirtualMachine;
 
 // Initializes the VM, looks for JDK installation, classpath & options etc. Doesn't execute anything on its own.
-VirtualMachine *Initialize(const VmOptions *options);
+VirtualMachine *Initialize(VmOptions *options);
 
 // Performs a cleanup, destroying any trace of the VM.
 void TearDown(VirtualMachine *vm);
