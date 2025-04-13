@@ -26,18 +26,18 @@ ObjectRegion *Instantiate(VirtualMachine *vm, ClassFile *cf);
  * Sets a value for a field with given name. The field will be checked if length
  * matches the type of field. If this check passes LENGTH bytes are copied from FROM address.
  */
-void SetValue(ObjectRegion *instance, const char *field_name, void *from, size_t length);
+void SetValue(VirtualMachine *vm, ObjectRegion *instance, const char *field_name, void *from, size_t length);
 
 /**
  * Sets a value for a field with given name. The field will be checked if length
  * matches the type of field. If this succeeds, data from ITEM are copied to the field position.
  */
-void SetValueEx(ObjectRegion *instance, const char *field_name, Item *item);
+void SetValueEx(VirtualMachine *vm, ObjectRegion *instance, const char *field_name, Item *item);
 
 /**
  * Returns a value of the field wrapped in Item structure. If it is unitialized, default value will be used.
  */
-Item *GetValue(ObjectRegion *instance, const char *field_name);
+Item *GetValue(VirtualMachine *vm, ObjectRegion *instance, const char *field_name);
 
 /**
  * Calculates the offset of a field_name in the instance object, where base is a most bottom class file to start at.
@@ -49,5 +49,8 @@ size_t CalculateOffset(VirtualMachine *vm, ClassFile *base, const char *field_na
  * Calculates the total size of fields that is required to allocate base's instance.
  */
 size_t CalculateTotalObjectSize(VirtualMachine *vm, ClassFile *base);
+
+// Recursive variant of GetFieldByName, will traverse through superclasses too
+Field *GetFieldRecursively(VirtualMachine *vm, ClassFile *base, const char *field_name);
 
 #endif
