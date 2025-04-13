@@ -1,0 +1,42 @@
+#include <classparse.h>
+#include <limits.h>
+#include <nanojvm.h>
+#include <stdio.h>
+
+int get_closest_line(ThreadFrame *frame)
+{
+    AttributeInfo *info = GetAttributeBySyntheticIdentifier(frame->method->code->attributes, frame->method->code->attributes_count, ATTR_LINE_NUMBER_TABLE);
+    if (!info) return -1;
+    LineNumberTableAttribute lnt = info->data.line_number_table;
+
+    int closest_line = -1;
+    uint8_t *closest_pc = 0;
+    for (size_t i = 0; i < lnt.line_number_table_length; i++) {
+        struct line_number_table s = lnt.line_number_table[i];
+        if (frame->pc >= s.start_pc) {
+            if (closest_line == -1 || s.start_pc >= closest_pc) {
+                closest_pc = s.start_pc;
+                closest_line = s.line_number;
+            }
+        }
+    }
+    return closest_line;
+}
+
+void print_stack_trace(Thread *thread)
+{
+    for (size_t i = thread->frame_count - 1; i >= 0; i--) {
+        ThreadFrame frame = thread->frames[i];
+        AttributeInfo *src_file = GetAttributeBySyntheticIdentifier(frame.method->cf->attributes, frame.method->cf->attribute_count, ATTR_SOURCE_FILE);
+        if (src_file) {
+            fprintf(stderr, "\tat %s::%s(%s:%d)\n", frame.method->cf->name, frame.method->name, *src_file->data.sourcefile.sourcefile, get_closest_line(&frame));
+        } 
+        fprintf(stderr, "\tat %s::%s(line=%d, pc=0x%p)\n", frame.method->cf->name, frame.method->name, get_closest_line(&frame), (void*) frame.pc);
+    }
+}
+
+void ThrowException(VirtualMachine *vm, const char *type, const char *message)
+{
+    fprintf(stderr, "%s: %s\n", type, message);
+    print_stack_trace(GetCurrent(vm));
+}
