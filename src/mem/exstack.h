@@ -47,6 +47,11 @@ void     PushStack(ExStack *stack, Item *item);
  */
 Item    *PopStack(ExStack *stack);
 
+/**
+ * Create item inline, so you don't have to do it manually :)
+ */
+Item *CreateItem(uint8_t metadata, void *source);
+
 // Utilities to manage the stack structure
 
 int8_t  _pop_byte(ExStack *stack);

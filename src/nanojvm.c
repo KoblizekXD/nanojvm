@@ -103,6 +103,7 @@ ClassFile *LoadExternal(VirtualMachine *vm, const char *path)
 
 ClassFile *FindClass(VirtualMachine *vm, const char *name)
 {
+    if (name == NULL) return NULL;
     if (vm->loaded_classes) {
         for (size_t i = 0; i < vm->loaded_classes_count; i++) {
             if (StringEquals(vm->loaded_classes[i]->name, name)) return vm->loaded_classes[i];
@@ -129,12 +130,47 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
             fclose(stream);
         } // TODO: Add support for other .jar(s)
     }
-    // TODO: Linking
 
     if (cf == NULL) return NULL;
     vm->loaded_classes_count++;
     vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
     vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
+
+    FindClass(vm, cf->super_name);
+    for (size_t i = 0; i < cf->interface_count; i++) {
+        FindClass(vm, cf->interfaces[i]);
+    }
+
+    for (size_t i = 0; i < cf->field_count; i++) {
+        Field f = cf->fields[i];
+        AttributeInfo *attr = GetAttributeBySyntheticIdentifier(f.attributes, f.attribute_count, ATTR_CONSTANT_VALUE);
+        if (!attr || !(f.access_flags & ACC_STATIC)) continue;
+        ConstantPoolEntry *entry = attr->data.constant_value.value;
+        switch (entry->tag) {
+            case CONSTANT_Float:
+                cf->fields[i].value = CreateItem(STACK_ELEMENT_FLOATING | STACK_ELEMENT_INT, &entry->info.int_float);
+                break;
+            case CONSTANT_Integer:
+                cf->fields[i].value = CreateItem(STACK_ELEMENT_INT, &entry->info.int_float);
+                break;
+            case CONSTANT_Double: {
+                long l = (((long) entry->info.long_double.high_bytes << 32) + entry->info.long_double.low_bytes);
+                cf->fields[i].value = CreateItem(STACK_ELEMENT_FLOATING | STACK_ELEMENT_LONG, &l);
+                break;
+            }
+            case CONSTANT_Long: {
+                long l = (((long) entry->info.long_double.high_bytes << 32) + entry->info.long_double.low_bytes);
+                cf->fields[i].value = CreateItem(STACK_ELEMENT_LONG, &l);
+                break;
+            }
+            case CONSTANT_String: {
+                error("Let lord know when LDC get's implemented lol!");
+                break;
+            }
+        }
+    }
+
+    // Guessing we could also eagerly load native functions? TODO
 
     return cf;
 }

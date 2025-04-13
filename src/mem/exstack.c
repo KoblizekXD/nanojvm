@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <mem/exstack.h>
+#include <string.h>
 #include <util/logging.h>
 #include <util/assertions.h>
 
@@ -69,6 +70,22 @@ size_t GetItemValueSize(Item *item)
         case STACK_ELEMENT_BYTE:  return 1;
         default: return 0; 
     }
+}
+
+Item *CreateItem(uint8_t metadata, void *source)
+{
+    size_t size = 0;
+    switch (metadata & 0x3) {
+        case STACK_ELEMENT_LONG:  size = 8; break;
+        case STACK_ELEMENT_INT:   size = 4; break;
+        case STACK_ELEMENT_SHORT: size = 2; break;
+        case STACK_ELEMENT_BYTE:  size = 1; break;
+        default: return 0; 
+    }
+    Item *i = malloc(sizeof(Item) + size);
+    i->metadata = metadata;
+    memcpy(i->data, source, size);
+    return i;
 }
 
 int8_t _pop_byte(ExStack *stack)
