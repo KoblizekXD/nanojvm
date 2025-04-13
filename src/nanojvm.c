@@ -60,8 +60,8 @@ ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
         if (!mz_zip_reader_get_filename(archive, i, name, req)) {
             free(name);
             continue;
-        }
-        if (strlen(name) >= strlen(combined) && strcmp(name + (strlen(name) - strlen(combined)), combined) == 0) {
+        } 
+        if (EndsWith(name, combined)) {
             size_t file_size;
             void *data = mz_zip_reader_extract_to_heap(archive, i, &file_size, 0);
             free(name);

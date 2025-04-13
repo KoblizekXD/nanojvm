@@ -13,6 +13,7 @@
 #define STACK_ELEMENT_IS_ADDRESS (1 << 2) // Must also have STACK_ELEMENT_LONG set
 #define STACK_ELEMENT_FLOATING (1 << 3)   // Optional for either STACK_ELEMENT_LONG or STACK_ELEMENT_INT. Will mark as double or float consecutively.
 
+// Wrapper for local variables, stack and more...
 typedef struct exstack_item {
     uint8_t metadata; // Described in above present macros 
     uint8_t data[];

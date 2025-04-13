@@ -3,6 +3,7 @@
 #include <util/logging.h>
 #include <nanojvm.h>
 #include <classparse.h>
+#include <platform/natives.h>
 
 ThreadFrame *push_frame(VirtualMachine *vm, Method *method, ExStack *lvars, ExStack *opstack)
 {    
@@ -64,14 +65,13 @@ extern Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *o
 Item *ExecuteMethodBytecode(VirtualMachine *vm, Method *method, ExStack *lvars, ExStack *opstack)
 {
     if (vm == NULL || method == NULL) return NULL;
-    AttributeInfo *a = GetAttributeBySyntheticIdentifier(method->attributes, method->attribute_count, ATTR_CODE);
 
-    if (a == NULL) {
+    CodeAttribute *attr = method->code;
+
+    if (attr == NULL) {
         error("Method %s::%s has no code present on it", method->cf->name, method->name);
         return NULL;
     }
-
-    CodeAttribute *attr = &a->data.code; 
 
     if (opstack == NULL)
         opstack = CreateStack(attr->max_stack);
@@ -106,16 +106,48 @@ void pass_parameters(ExStack *callee, ExStack *caller, size_t count)
     callee->top += count;
 }
 
+Item *invoke_native_method(VirtualMachine *vm, Method *method)
+{
+    NativeFunction native = NULL;
+    char *cname = GetNativeName(method);
+    for (size_t i = 0; i < vm->natives_count; i++) {
+        native = FindNativeFunction(vm->natives[i], cname);
+        if (native) break;
+    }
+
+    if (!native) {
+        error("Failed to find native method %s::%s(%s) in %d libraries", method->cf->name, method->name, cname, vm->natives_count);
+        free(cname);
+        return NULL;
+    }
+    free(cname);
+    Thread *t = GetCurrent(vm);
+    ExStack *stack = FrameCeiling(t).opstack;
+    size_t argc = GetParameterCount(method);
+    Item **argv = malloc(sizeof(Item*) * argc);
+    for (size_t i = argc; i > 0; i--) {
+        argv[i - 1] = PopStack(stack);
+    }
+    ObjectRegion *instance = NULL;
+    if (!(method->access_flags & ACC_STATIC)) {
+        instance = _pop_reference(stack);
+    }
+    return native(vm, instance, argc, argv);
+}
+
 Item *InvokeMethod(VirtualMachine *vm, Method *method)
 {
-    AttributeInfo *a = GetAttributeBySyntheticIdentifier(method->attributes, method->attribute_count, ATTR_CODE);
+    if (method->access_flags & ACC_NATIVE) {
+        return invoke_native_method(vm, method);
+    }
 
-    if (a == NULL) {
+    CodeAttribute *attr = method->code;
+
+    if (attr == NULL) {
         error("Method %s::%s has no code present on it", method->cf->name, method->name);
         return NULL;
     }
 
-    CodeAttribute attr = a->data.code;
     Thread *t = GetCurrent(vm);
     ThreadFrame f = FrameCeiling(t);
     
@@ -124,8 +156,8 @@ Item *InvokeMethod(VirtualMachine *vm, Method *method)
         argc++;
     }
 
-    ExStack *opstack = CreateStack(attr.max_stack);
-    ExStack *locals = CreateStack(attr.max_locals);
+    ExStack *opstack = CreateStack(attr->max_stack);
+    ExStack *locals = CreateStack(attr->max_locals);
     pass_parameters(locals, f.opstack, argc);
     return ExecuteMethodBytecode(vm, method, locals, opstack);
 }

@@ -39,6 +39,8 @@ typedef struct virtual_machine {
     JDK *jdk;
     size_t thread_count;
     Thread *threads;
+    size_t natives_count;
+    void **natives;
 } VirtualMachine;
 
 typedef struct object_region {
@@ -49,7 +51,10 @@ typedef struct object_region {
     uint8_t data[];
 } ObjectRegion;
 
+// Initializes the VM, looks for JDK installation, classpath & options etc. Doesn't execute anything on its own.
 VirtualMachine *Initialize(const VmOptions *options);
+
+// Performs a cleanup, destroying any trace of the VM.
 void TearDown(VirtualMachine *vm);
 
 /**
@@ -71,6 +76,13 @@ Thread *GetCurrent(VirtualMachine *vm);
  */
 Item *ExecuteMethodBytecode(VirtualMachine *vm, Method *method, ExStack *lvars, ExStack *opstack);
 
+/**
+ * Executes bytecode instructions present on given method assuming code attribute exists.
+ * This method will automatically pickup current thread's frame stack and push/pop to it accordingly.
+ * It will also take parameters from the top frame's operand stack.
+ *
+ * @return NULL if code attribute is not present or mehtod returns void. Otherwise returns what method bytecode would.
+ */
 Item *InvokeMethod(VirtualMachine *vm, Method *method);
 
 JDK *SetupJDK(void);
