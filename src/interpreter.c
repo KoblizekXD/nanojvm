@@ -10,7 +10,6 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
 {
     CodeAttribute *code = frame->method->code;
     frame->pc = code->code;
-    ThrowException(vm, "java.lang.Test", "Hello!");
 
     while (frame->pc < (code->code + code->code_length)) {
     

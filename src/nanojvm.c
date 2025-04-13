@@ -85,57 +85,9 @@ ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
     return NULL;
 }
 
-ClassFile *LoadExternal(VirtualMachine *vm, const char *path)
+void link_class(VirtualMachine *vm, ClassFile *cf)
 {
-    FILE *f = fopen(path, "rb");
-    if (!f) return NULL;
-    ClassFile *cf = ReadFromStream(f);
-    if (!cf) {
-        fclose(f);
-        return NULL;
-    }
-    vm->loaded_classes_count++;
-    vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
-    vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
-    fclose(f);
-    return cf;
-}
-
-ClassFile *FindClass(VirtualMachine *vm, const char *name)
-{
-    if (name == NULL) return NULL;
-    if (vm->loaded_classes) {
-        for (size_t i = 0; i < vm->loaded_classes_count; i++) {
-            if (StringEquals(vm->loaded_classes[i]->name, name)) return vm->loaded_classes[i];
-        }
-    }
-    ClassFile *cf = NULL;
-    if (vm->jdk && vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
-    for (size_t i = 0; i < vm->options->classpath_len; i++) {
-        const char *str = vm->options->classpath[i];
-        if (EndsWith(str, ".class")) {
-            FILE *stream = fopen(str, "rb");
-            if (stream == NULL) {
-                warn("Cannot open stream for %s: %s", str, strerror(errno));
-                continue;
-            }
-            char *strname = PeekClassName(stream);
-            if (StringEquals(strname, name)) { 
-                cf = ReadFromStream(stream);
-                free(strname);
-                fclose(stream);
-                break;
-            }
-            free(strname);
-            fclose(stream);
-        } // TODO: Add support for other .jar(s)
-    }
-
-    if (cf == NULL) return NULL;
-    vm->loaded_classes_count++;
-    vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
-    vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
-
+    debug("Link %s", cf->name);
     FindClass(vm, cf->super_name);
     for (size_t i = 0; i < cf->interface_count; i++) {
         FindClass(vm, cf->interfaces[i]);
@@ -169,6 +121,66 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
             }
         }
     }
+}
+
+ClassFile *LoadExternal(VirtualMachine *vm, const char *path)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    ClassFile *cf = ReadFromStream(f);
+    if (!cf) {
+        fclose(f);
+        return NULL;
+    }
+    vm->loaded_classes_count++;
+    vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
+    vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
+    fclose(f);
+
+    link_class(vm, cf);
+
+    return cf;
+}
+
+ClassFile *FindClass(VirtualMachine *vm, const char *name)
+{
+    if (name == NULL) return NULL;
+    if (vm->loaded_classes) {
+        for (size_t i = 0; i < vm->loaded_classes_count; i++) {
+            if (StringEquals(vm->loaded_classes[i]->name, name)) return vm->loaded_classes[i];
+        }
+    }
+    ClassFile *cf = NULL;
+    if (vm->jdk && vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
+    for (size_t i = 0; i < vm->options->classpath_len; i++) {
+        const char *str = vm->options->classpath[i];
+        if (EndsWith(str, ".class")) {
+            FILE *stream = fopen(str, "rb");
+            if (stream == NULL) {
+                warn("Cannot open stream for %s: %s", str, strerror(errno));
+                continue;
+            }
+            char *strname = PeekClassName(stream);
+            if (StringEquals(strname, name)) { 
+                cf = ReadFromStream(stream);
+                free(strname);
+                fclose(stream);
+                break;
+            }
+            free(strname);
+            fclose(stream);
+        } // TODO: Add support for other .jar(s)
+    }
+
+    if (cf == NULL) {
+        error("ClassNotFound: %s", name);
+        return NULL;
+    }
+    vm->loaded_classes_count++;
+    vm->loaded_classes = realloc(vm->loaded_classes, sizeof(ClassFile*) * vm->loaded_classes_count);
+    vm->loaded_classes[vm->loaded_classes_count - 1] = cf;
+
+    link_class(vm, cf);
 
     // Guessing we could also eagerly load native functions? TODO
 
