@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// ObjectRegion for storing object data
 typedef struct object_region {
     uint8_t metadata;
     size_t size;
@@ -16,6 +17,17 @@ typedef struct object_region {
     ClassFile *cf;
     uint8_t data[];
 } ObjectRegion;
+
+// Struct representing byte, char, boolean, short, int and long primitive arrays.
+typedef struct primitive_array_region {
+    uint8_t metadata;
+    size_t size;
+    HeapRegion *next;
+    uint8_t data[];
+} PrimitiveArrayRegion;
+
+// Structure representing arrays of Object arrays. Shares the same structure as ObjectRegion, but is managed differently.
+typedef ObjectRegion ObjectArrayRegion;
 
 /**
  * Create a new instance of a given class. The region is allocated in the heap memory of the virtual machine.
