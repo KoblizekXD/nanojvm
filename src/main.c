@@ -1,5 +1,5 @@
-#include "classparse.h"
-#include "util/logging.h"
+#include <classparse.h>
+#include <util/logging.h>
 #include <vmopts.h>
 #include <nanojvm.h>
 #include <mem/heap.h>

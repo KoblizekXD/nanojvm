@@ -96,6 +96,6 @@ Item *InvokeMethod(VirtualMachine *vm, Method *method);
  */
 JDK *SetupJDK(void);
 
-void ThrowException(VirtualMachine *vm, const char *type, const char *message);
+void ThrowException(VirtualMachine *vm, const char *type, const char *message, ...);
 
 #endif

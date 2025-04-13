@@ -1,4 +1,5 @@
 #include <classparse.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <nanojvm.h>
 #include <stdio.h>
@@ -35,8 +36,15 @@ void print_stack_trace(Thread *thread)
     }
 }
 
-void ThrowException(VirtualMachine *vm, const char *type, const char *message)
+void ThrowException(VirtualMachine *vm, const char *type, const char *message, ...)
 {
-    fprintf(stderr, "\x1b[31m%s: %s\x1b[0m\n", type, message);
+    va_list args;
+    va_start(args, message);
+
+    fprintf(stderr, "\x1b[31m%s: ", type);
+    vfprintf(stderr, message, args);
+    fprintf(stderr, "\x1b[0m\n");
+
+    va_end(args);
     print_stack_trace(GetCurrent(vm));
 }

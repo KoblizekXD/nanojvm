@@ -41,13 +41,13 @@ ThreadFrame* pop_frame(VirtualMachine *vm, Item *to_push)
     ThreadFrame *popped_frame = &t->frames[t->frame_count - 1];
 
     t->frame_count--;
+    DestroyStack(popped_frame->locals);
+    DestroyStack(popped_frame->opstack);
 
     if (t->frame_count == 0) {
         free(t->frames);
         t->frames = NULL;
-    } else {
-        DestroyStack(popped_frame->locals);
-        DestroyStack(popped_frame->opstack);
+    } else { 
         ThreadFrame *new_frames = realloc(t->frames, t->frame_count * sizeof(ThreadFrame));
         if (new_frames) {
             t->frames = new_frames;
