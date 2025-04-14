@@ -1,7 +1,9 @@
+#include <alloca.h>
 #include <ctype.h>
 #include <nanojvm.h>
 #include <stddef.h>
 #include <util/logging.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vmopts.h>
@@ -105,7 +107,7 @@ size_t unit_parser(const char *str)
 
 #define CheckNext if (i >= argc - 1) { error("Missing value after %s", argv[i]); exit(1); }
 
-VmOptions Parse(int argc, char **argv)
+VmOptions *Parse(int argc, char **argv)
 {
     VmOptions opts = DEFAULT_OPTIONS;
 
@@ -166,7 +168,9 @@ VmOptions Parse(int argc, char **argv)
     opts.argv = argv + ended;
     opts.argc = argc - ended;
 
-    return opts;
+    VmOptions *allocated = malloc(sizeof(VmOptions));
+    *allocated = opts;
+    return allocated;
 }
 
 void FreeOptionsIfPossible(VmOptions *opts)
@@ -181,10 +185,17 @@ void PrintSummary(VmOptions *options)
     debug("Disable JDK loading: %s", (options->flags & OPTION_DISABLE_JVM_LOOKUP) != 0 ? "yes" : "no");
     debug("%llu classpath entries:", options->classpath_len);
     for (size_t i = 0; i < options->classpath_len; i++) {
-        printf("\t%s\n", options->classpath[i]);
+        debug("\t%s", options->classpath[i]);
     }
     debug("%llu args:", options->argc);
     for (size_t i = 0; i < options->argc; i++) {
-        printf("\t%s\n", options->argv[i]);
+        debug("\t%s", options->argv[i]);
     }
+}
+
+VmOptions *GetDefaultOptions(void)
+{
+    VmOptions *opts = malloc(sizeof(VmOptions));
+    *opts = DEFAULT_OPTIONS;
+    return opts;
 }

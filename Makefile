@@ -31,7 +31,7 @@ DEPS := $(OBJS:.o=.d)
 
 # ===== Compiler Flags =====
 COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -I$(LIB_DIR)/classparse/src/ -I$(LIB_DIR)/miniz/ -MMD -MP
-COMMON_LD_FLAGS := -L $(LIB_DIR)/classparse/build/ -rdynamic -lclassparse -pthread
+COMMON_LD_FLAGS := -L $(LIB_DIR)/classparse/bin/ -rdynamic -lclassparse -pthread
 
 ifeq ($(BUILD_MODE),prod)
     OPT_FLAGS := -O3 -flto -DNDEBUG

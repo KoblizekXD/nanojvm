@@ -1,4 +1,5 @@
 #include <classparse.h>
+#include <stdlib.h>
 #include <util/logging.h>
 #include <vmopts.h>
 #include <nanojvm.h>
@@ -6,16 +7,23 @@
 
 VirtualMachine *vm;
 
+void safe_exit(void)
+{
+    debug("External exit call was initiated...");
+    TearDown(vm);
+}
+
 int main(int argc, char **argv)
 {
-    VmOptions opts = Parse(argc, argv);
-    PrintSummary(&opts);
-    vm = Initialize(&opts);
+    VmOptions *opts= Parse(argc, argv);
+    PrintSummary(opts);
+    vm = Initialize(opts);
+    atexit(safe_exit);
 
-    ClassFile *cf = LoadExternal(vm, opts.classpath[opts.classpath_len - 1]);
+    ClassFile *cf = LoadExternal(vm, opts->classpath[opts->classpath_len - 1]);
 
     if (!cf) {
-        error("File '%s' must be a valid classfile", opts.classpath[opts.classpath_len - 1]);
+        error("File '%s' must be a valid classfile", opts->classpath[opts->classpath_len - 1]);
         TearDown(vm);
         return 1;
     }

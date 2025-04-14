@@ -1,8 +1,13 @@
 #include <classparse.h>
+#include <stdlib.h>
+#include <setjmp.h>
 #include <stdarg.h>
 #include <limits.h>
 #include <nanojvm.h>
 #include <stdio.h>
+#include <threads.h>
+#include <util/strings.h>
+#include <string.h>
 
 int get_closest_line(ThreadFrame *frame)
 {
@@ -38,6 +43,36 @@ void print_stack_trace(Thread *thread)
 
 void ThrowException(VirtualMachine *vm, const char *type, const char *message, ...)
 {
+    Thread *t = GetCurrent(vm);
+
+    int to_pop = 0;
+    for (int i = t->frame_count - 1; i >= 0; i--) {
+        ThreadFrame frame = t->frames[i];
+        struct _exc_table *table = frame.method->code->exception_table;
+        int valid = 0;
+        for (size_t j = 0; j < frame.method->code->exception_table_length; j++) {
+            if (StringEquals(*table[j].catch_type->name, type) && table[j].start_pc >= frame.pc && table[j].end_pc < frame.pc) {
+                valid = 1;
+                frame.pc = table[j].handler_pc;
+                break; 
+            }
+        }
+        if (!valid) to_pop++;
+        else break;
+    }
+
+    if ((size_t) to_pop != t->frame_count) {
+        for (int i = 0; i < to_pop; i++) {
+            ThreadFrame *popped_frame = &FrameCeiling(t);
+            t->frame_count--;
+            DestroyStack(popped_frame->locals);
+            DestroyStack(popped_frame->opstack);
+            t->frames = realloc(t->frames, t->frame_count * sizeof(ThreadFrame));
+        }
+        ThreadFrame *frame = &FrameCeiling(t); 
+        longjmp(frame->ret_buf, 1);
+    }
+
     va_list args;
     va_start(args, message);
 
@@ -47,4 +82,6 @@ void ThrowException(VirtualMachine *vm, const char *type, const char *message, .
 
     va_end(args);
     print_stack_trace(GetCurrent(vm));
+
+    thrd_exit(1);
 }

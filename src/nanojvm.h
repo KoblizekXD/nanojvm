@@ -3,6 +3,7 @@
 
 #include <mem/exstack.h>
 #include <mem/heap.h>
+#include <setjmp.h>
 #include <threads.h>
 #include <vmopts.h>
 #include <classparse.h>
@@ -21,6 +22,7 @@ typedef struct vm_frame {
     uint8_t *pc;
     ExStack *locals;
     ExStack *opstack;
+    jmp_buf ret_buf;
 } ThreadFrame;
 
 typedef struct vm_thread {
@@ -96,6 +98,14 @@ Item *InvokeMethod(VirtualMachine *vm, Method *method);
  */
 JDK *SetupJDK(void);
 
+/**
+ * Throws an exception.
+ * When an exception is thrown, the VM will attempt to recover from it by traversing the call stack and looking for possible
+ * exception handlers. If a valid handler is found, the function will return address of the given frame to return to, with corresponding PC
+ * set to the address. If no exception handler is found, VM will print call stack and exit gracefuly, freeing all resources.
+ */
 void ThrowException(VirtualMachine *vm, const char *type, const char *message, ...);
+
+VmOptions *GetDefaultOptions(void);
 
 #endif

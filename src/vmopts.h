@@ -21,7 +21,7 @@ typedef struct vm_options {
 
 void PrintHelp(void);
 void PrintVersionInformation(void);
-VmOptions Parse(int argc, char **argv);
+VmOptions *Parse(int argc, char **argv);
 void FreeOptionsIfPossible(VmOptions *opts);
 void PrintSummary(VmOptions *options);
 

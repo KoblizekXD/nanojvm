@@ -1,3 +1,5 @@
+#include <mem/exstack.h>
+#include <mem/memutils.h>
 #include <threads.h>
 #include <util/logging.h>
 #include <util/strings.h>
@@ -14,7 +16,7 @@
 VirtualMachine *Initialize(VmOptions *options)
 {
     if (options == NULL)
-        options = (VmOptions*) &DEFAULT_OPTIONS;
+        options = GetDefaultOptions();
 
     VirtualMachine *vm = malloc(sizeof(VirtualMachine));
     vm->options = options;
@@ -34,6 +36,8 @@ VirtualMachine *Initialize(VmOptions *options)
 
 void TearDown(VirtualMachine *vm)
 {
+    MemoryInformation info = GetMemoryState();
+    debug("Memory state before exit: Using %llu bytes, %llu bytes heap allocated", info.total_usage, info.heap_allocated);
     FreeOptionsIfPossible(vm->options);
     FreeHeap(vm->heap);
     for (size_t i = 0; i < vm->loaded_classes_count; i++) {
@@ -46,6 +50,10 @@ void TearDown(VirtualMachine *vm)
         free(vm->jdk);
     }
     for (size_t i = 0; i < vm->thread_count; i++) {
+        for (size_t j = 0; j < vm->threads[i].frame_count; j++) {
+            DestroyStack(vm->threads[i].frames[j].opstack);
+            DestroyStack(vm->threads[i].frames[j].locals);
+        }
         free(vm->threads[i].frames);
     }
     free(vm->threads);
@@ -120,6 +128,12 @@ void link_class(VirtualMachine *vm, ClassFile *cf)
                 break;
             }
         }
+    }
+
+    Method *static_init = GetMethodByName(cf, "<clinit>");
+
+    if (static_init) {
+        ExecuteMethodBytecode(vm, static_init, NULL, NULL);
     }
 }
 

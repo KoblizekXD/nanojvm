@@ -12,13 +12,18 @@
 Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack, ExStack *lvars)
 {
     CodeAttribute *code = frame->method->code;
-    frame->pc = code->code;
+
+    if (setjmp(frame->ret_buf) == 0)
+        frame->pc = code->code;
+    else {
+        frame = &FrameCeiling(GetCurrent(vm));
+    }
 
     while (frame->pc < (code->code + code->code_length)) {
         uint8_t opcode = Read8();
         switch (opcode) {
             default:
-                ThrowException(vm, "java.lang.InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionByName(opcode), opcode);
+                ThrowException(vm, "java.lang.InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
         }
     }

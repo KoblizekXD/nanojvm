@@ -1,6 +1,7 @@
 #include <mem/exstack.h>
 #include <util/logging.h>
 #include <stdlib.h>
+#include <string.h>
 #include <util/assertions.h>
 
 static inline void AssertVariableMetadata(Item *var, uint8_t metadata)
