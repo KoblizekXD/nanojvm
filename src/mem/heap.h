@@ -18,7 +18,7 @@ typedef struct heap_region {
     size_t size;
     struct heap_region *next;
     uint8_t data[];
-} HeapRegion;
+} __attribute__((packed)) HeapRegion;
 
 typedef struct heap {
     size_t size;

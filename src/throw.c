@@ -1,3 +1,4 @@
+#include "objects.h"
 #include <classparse.h>
 #include <stdlib.h>
 #include <setjmp.h>
@@ -51,7 +52,7 @@ void ThrowException(VirtualMachine *vm, const char *type, const char *message, .
         struct _exc_table *table = frame.method->code->exception_table;
         int valid = 0;
         for (size_t j = 0; j < frame.method->code->exception_table_length; j++) {
-            if (StringEquals(*table[j].catch_type->name, type) && table[j].start_pc >= frame.pc && table[j].end_pc < frame.pc) {
+            if (Extends(vm, FindClass(vm, type), FindClass(vm, *table[j].catch_type->name)) && frame.pc >= table[j].start_pc && frame.pc - 1 < table[j].end_pc) {
                 valid = 1;
                 frame.pc = table[j].handler_pc;
                 break; 

@@ -52,6 +52,11 @@ Item    *PopStack(ExStack *stack);
  */
 Item *CreateItem(uint8_t metadata, void *source);
 
+/**
+ * Duplicates given item.
+ */
+Item *Copy(Item *src);
+
 // Utilities to manage the stack structure
 
 int8_t  _pop_byte(ExStack *stack);
@@ -69,5 +74,21 @@ void _push_long(ExStack *stack, int64_t value);
 void _push_float(ExStack *stack, float value);
 void _push_double(ExStack *stack, double value);
 void _push_reference(ExStack *stack, void *value);
+
+#define PopByte(stack) _pop_byte(stack)
+#define PopShort(stack) _pop_short(stack)
+#define PopInt(stack) _pop_int(stack)
+#define PopLong(stack) _pop_long(stack)
+#define PopFloat(stack) _pop_float(stack)
+#define PopDouble(stack) _pop_double(stack)
+#define PopReference(stack) _pop_reference(stack)
+
+#define PushByte(stack, value) _push_byte(stack, value)
+#define PushShort(stack, value) _push_short(stack, value)
+#define PushInt(stack, value) _push_int(stack, value)
+#define PushLong(stack, value) _push_long(stack, value)
+#define PushFloat(stack, value) _push_float(stack, value)
+#define PushDouble(stack, value) _push_double(stack, value)
+#define PushReference(stack, value) _push_reference(stack, value)
 
 #endif

@@ -19,6 +19,10 @@ void PrintHelp(void)
         "\t\tAppends a file or a directory to the runtime classpath. If file is passed, it needs to be one of: .class, .jar, .jmod. This option can be repeated.\n"
         "\t--no-jdk\n"
         "\t\tDisables default lookup JVM installation lookup.\n"
+        "\t--no-clinit\n"
+        "\t\tDon't run static initializers\n"
+        "\t--no-init\n"
+        "\t\tDon't run object initializers(contructors)\n"
         "\t--heap-init <size>\n"
         "\t\tInitial heap pre-allocation size. Defaults to 4KiB.\n"
         "\t--heap-max <size>\n"
@@ -148,6 +152,10 @@ VmOptions *Parse(int argc, char **argv)
             opts.heap_max = unit_parser(argv[i]);
         } else if (StringEquals(str, "--no-jdk")) {
             opts.flags |= OPTION_DISABLE_JVM_LOOKUP;
+        } else if (StringEquals(str, "--no-clinit")) {
+            opts.flags |= OPTION_DISABLE_CLINIT;
+        } else if (StringEquals(str, "--no-init")) {
+            opts.flags |= OPTION_DISABLE_INIT;
         } else {
             error("Unrecognized option: %s", str);
             FreeOptionsIfPossible(&opts);

@@ -8,6 +8,8 @@
 #define DEFAULT_HEAP_MAX 20480
 
 #define OPTION_DISABLE_JVM_LOOKUP (1 << 0)
+#define OPTION_DISABLE_CLINIT (1 << 1)
+#define OPTION_DISABLE_INIT (1 << 2)
 
 typedef struct vm_options {
     size_t classpath_len;

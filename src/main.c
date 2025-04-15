@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     atexit(safe_exit);
 
     ClassFile *cf = LoadExternal(vm, opts->classpath[opts->classpath_len - 1]);
-
+    
     if (!cf) {
         error("File '%s' must be a valid classfile", opts->classpath[opts->classpath_len - 1]);
         TearDown(vm);

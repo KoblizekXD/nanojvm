@@ -127,6 +127,25 @@ Item *GetValue(VirtualMachine *vm, ObjectRegion *instance, const char *field_nam
     return item;
 }
 
+ObjectRegion *InstantiateString(VirtualMachine *vm, const char *data)
+{
+    uint64_t hash = ComputeHash(data);
+    if (vm->string_pool) {
+        for (size_t i = 0; i < vm->string_count; i++) {
+            if (vm->string_pool[i].hash == hash)
+                return vm->string_pool[i].instance;
+        }
+    } 
+    ObjectRegion *reg = Instantiate(vm, FindClass(vm, "java/lang/String"));
+    uint8_t coder = 0;
+    SetValue(vm, reg, "coder", &coder, 1);
+    vm->string_count++;
+    vm->string_pool = realloc(vm->string_pool, sizeof(struct string_entry) * vm->string_count);
+    vm->string_pool[vm->string_count - 1].hash = hash;
+    vm->string_pool[vm->string_count - 1].instance = reg;
+    return reg;
+}
+
 Field *GetFieldRecursively(VirtualMachine *vm, ClassFile *base, const char *field_name)
 {
     while (base != NULL) {
@@ -139,4 +158,13 @@ Field *GetFieldRecursively(VirtualMachine *vm, ClassFile *base, const char *fiel
         base = FindClass(vm, base->super_name);
     }
     return NULL;
+}
+
+int Extends(VirtualMachine *vm, ClassFile *what, ClassFile *who)
+{
+    while (what != NULL) {
+        if (what == who || StringEquals(what->name, who->name)) return 1;
+        what = FindClass(vm, what->super_name);
+    }
+    return 0;
 }

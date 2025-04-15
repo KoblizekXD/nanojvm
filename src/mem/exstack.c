@@ -49,6 +49,14 @@ void PushStack(ExStack *stack, Item *item)
     stack->top++;
 }
 
+Item *Copy(Item *src)
+{
+    size_t s = GetItemValueSize(src);
+    Item *new = malloc(sizeof(Item) + s);
+    memcpy(new, src, sizeof(Item) + s);
+    return new;
+}
+
 Item *PopStack(ExStack *stack)
 {
     if (stack == NULL || stack->top == 0) {

@@ -33,6 +33,8 @@ typedef struct vm_thread {
 
 #define FrameCeiling(THREAD) THREAD->frames[THREAD->frame_count - 1]
 
+struct object_region;
+
 typedef struct virtual_machine {
     VmOptions *options;
     size_t loaded_classes_count;
@@ -43,6 +45,11 @@ typedef struct virtual_machine {
     Thread *threads;
     size_t natives_count;
     void **natives;
+    size_t string_count;
+    struct string_entry {
+        uint64_t hash;
+        struct object_region *instance;
+    } *string_pool;
 } VirtualMachine;
 
 // Initializes the VM, looks for JDK installation, classpath & options etc. Doesn't execute anything on its own.
@@ -106,6 +113,9 @@ JDK *SetupJDK(void);
  */
 void ThrowException(VirtualMachine *vm, const char *type, const char *message, ...);
 
+/**
+ * Returns a new instance of default VmOptions.
+ */
 VmOptions *GetDefaultOptions(void);
 
 #endif

@@ -16,7 +16,7 @@ typedef struct object_region {
     HeapRegion *next;
     ClassFile *cf;
     uint8_t data[];
-} ObjectRegion;
+} __attribute__((packed)) ObjectRegion;
 
 // Struct representing byte, char, boolean, short, int and long primitive arrays.
 typedef struct primitive_array_region {
@@ -24,7 +24,7 @@ typedef struct primitive_array_region {
     size_t size;
     HeapRegion *next;
     uint8_t data[];
-} PrimitiveArrayRegion;
+} __attribute__((packed)) PrimitiveArrayRegion;
 
 // Structure representing arrays of Object arrays. Shares the same structure as ObjectRegion, but is managed differently.
 typedef ObjectRegion ObjectArrayRegion;
@@ -62,7 +62,15 @@ size_t CalculateOffset(VirtualMachine *vm, ClassFile *base, const char *field_na
  */
 size_t CalculateTotalObjectSize(VirtualMachine *vm, ClassFile *base);
 
+/**
+ * Create a new instance of a String class with bytes set to provided data.
+ */
+ObjectRegion *InstantiateString(VirtualMachine *vm, const char *data);
+
 // Recursive variant of GetFieldByName, will traverse through superclasses too
 Field *GetFieldRecursively(VirtualMachine *vm, ClassFile *base, const char *field_name);
+
+// Checks if WHAT extends or is WHO
+int Extends(VirtualMachine *vm, ClassFile *what, ClassFile *who);
 
 #endif

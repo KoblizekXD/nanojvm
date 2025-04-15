@@ -1,5 +1,7 @@
+#include "objects.h"
 #include <mem/exstack.h>
 #include <mem/memutils.h>
+#include <stddef.h>
 #include <threads.h>
 #include <util/logging.h>
 #include <util/strings.h>
@@ -31,6 +33,8 @@ VirtualMachine *Initialize(VmOptions *options)
     vm->threads->native_thread = thrd_current();
     vm->threads->frames = NULL;
     vm->threads->frame_count = 0;
+    vm->string_count = 0;
+    vm->string_pool = NULL;
     return vm;
 }
 
@@ -41,6 +45,10 @@ void TearDown(VirtualMachine *vm)
     FreeOptionsIfPossible(vm->options);
     FreeHeap(vm->heap);
     for (size_t i = 0; i < vm->loaded_classes_count; i++) {
+        ClassFile *cf = vm->loaded_classes[i];
+        for (size_t j = 0; j < cf->field_count; j++) {
+            if (cf->fields[j].value) free(cf->fields[j].value);
+        }
         FreeClassFile(vm->loaded_classes[i]);
     }
     free(vm->loaded_classes);
@@ -119,12 +127,13 @@ void link_class(VirtualMachine *vm, ClassFile *cf)
                 break;
             }
             case CONSTANT_Long: {
-                long l = (((long) entry->info.long_double.high_bytes << 32) + entry->info.long_double.low_bytes);
+                long l = (((long)((uint64_t)entry->info.long_double.high_bytes << 32)) | entry->info.long_double.low_bytes);
                 cf->fields[i].value = CreateItem(STACK_ELEMENT_LONG, &l);
                 break;
             }
             case CONSTANT_String: {
-                error("Let lord know when LDC get's implemented lol!");
+                ObjectRegion *ref = InstantiateString(vm, *entry->info.string.string);
+                cf->fields[i].value = CreateItem(STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG, &ref);
                 break;
             }
         }
@@ -132,7 +141,7 @@ void link_class(VirtualMachine *vm, ClassFile *cf)
 
     Method *static_init = GetMethodByName(cf, "<clinit>");
 
-    if (static_init) {
+    if (static_init && (vm->options->flags & OPTION_DISABLE_CLINIT) == 0) {
         ExecuteMethodBytecode(vm, static_init, NULL, NULL);
     }
 }

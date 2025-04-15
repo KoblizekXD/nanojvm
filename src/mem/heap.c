@@ -71,6 +71,7 @@ Heap *InitializeHeap(size_t size)
 
 HeapRegion *Allocate(Heap *heap, size_t size)
 {
+    // size = (size + sizeof(void*) - 1) & ~(sizeof(void*) - 1); // Align to system alignment, we ideally don't want
     if (heap == NULL || heap->free == NULL) return NULL;
     if (size < sizeof(HeapRegion)) {
         error("Region sized smaller than %d bytes", sizeof(HeapRegion));
