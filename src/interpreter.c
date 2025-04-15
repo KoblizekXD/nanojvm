@@ -1,6 +1,6 @@
-#include "mem/exstack.h"
-#include "util/strings.h"
-#include "vmopts.h"
+#include <mem/exstack.h>
+#include <util/strings.h>
+#include <vmopts.h>
 #include <string.h>
 #include <classparse.h>
 #include <nanojvm.h>
@@ -9,6 +9,15 @@
 
 #define Read16() (*frame->pc << 8) | *(frame->pc + 1); frame->pc += 2
 #define Read8() *frame->pc++
+
+#define INSTRUCTION(NAME) static inline void handler_##NAME(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack, ExStack *lvars)
+#define HANDLER_FOR(INSN, HANDLER) case INSN: handler_##HANDLER(vm, frame, opstack, lvars); break;
+
+INSTRUCTION(new)
+{
+    uint16_t index = Read16();
+    PushReference(opstack, Instantiate(vm, FindClass(vm, *frame->method->cf->constant_pool[index - 1].info._class.name)));
+}
 
 /**
  * Internal bytecode executor. Will process instructions and
@@ -28,11 +37,7 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
     while (frame->pc < (code->code + code->code_length)) {
         uint8_t opcode = Read8();
         switch (opcode) {
-            case NEW: {
-                uint16_t index = Read16();
-                PushReference(opstack, Instantiate(vm, FindClass(vm, *cf->constant_pool[index - 1].info._class.name)));
-                break;
-            }
+            HANDLER_FOR(NEW, new)
             case DUP:
                 PushStack(opstack, Copy(opstack->data[opstack->top - 1]));
                 break;
