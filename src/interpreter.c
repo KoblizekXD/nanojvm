@@ -1,4 +1,5 @@
 #include <mem/exstack.h>
+#include <stdlib.h>
 #include <util/strings.h>
 #include <vmopts.h>
 #include <string.h>
@@ -272,6 +273,93 @@ INSTRUCTION(aload_3)
     load(PASS_PARAMS, 3, STACK_ELEMENT_LONG | STACK_ELEMENT_IS_ADDRESS);
 }
 
+void arrayload(INSTRUCTION_PARAMS)
+{
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    PushStack(opstack, GetArrayValue(arrayref, index));
+}
+
+INSTRUCTION(iaload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(laload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(faload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(daload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(aaload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(baload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(caload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(saload)
+{
+    arrayload(PASS_PARAMS);
+}
+
+INSTRUCTION(istore)
+{
+    uint8_t index = Read8();
+    int32_t i = PopInt(opstack);
+    free(lvars->data[index]);
+    lvars->data[index] = CreateItem(STACK_ELEMENT_INT, &i);
+}
+
+INSTRUCTION(fstore)
+{
+    uint8_t index = Read8();
+    float f = PopFloat(opstack);
+    free(lvars->data[index]);
+    lvars->data[index] = CreateItem(STACK_ELEMENT_FLOATING | STACK_ELEMENT_INT, &f);
+}
+
+INSTRUCTION(astore)
+{
+    uint8_t index = Read8();
+    void* ref = PopReference(opstack);
+    free(lvars->data[index]);
+    lvars->data[index] = CreateItem(STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG, ref);
+}
+
+INSTRUCTION(lstore)
+{
+    uint8_t index = Read8();
+    int64_t l = PopLong(opstack);
+    free(lvars->data[index]);
+    lvars->data[index] = CreateItem(STACK_ELEMENT_LONG, &l);
+}
+
+INSTRUCTION(dstore)
+{
+    uint8_t index = Read8();
+    double d = PopDouble(opstack);
+    free(lvars->data[index]);
+    lvars->data[index] = CreateItem(STACK_ELEMENT_LONG | STACK_ELEMENT_FLOATING, &d);
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -335,6 +423,19 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(ALOAD_1, aload_1);
             HANDLER_FOR(ALOAD_2, aload_2);
             HANDLER_FOR(ALOAD_3, aload_3);
+            HANDLER_FOR(IALOAD, iaload);
+            HANDLER_FOR(LALOAD, laload);
+            HANDLER_FOR(FALOAD, faload);
+            HANDLER_FOR(DALOAD, daload);
+            HANDLER_FOR(AALOAD, aaload);
+            HANDLER_FOR(BALOAD, baload);
+            HANDLER_FOR(CALOAD, caload);
+            HANDLER_FOR(SALOAD, saload);
+            HANDLER_FOR(ISTORE, istore);
+            HANDLER_FOR(LSTORE, lstore);
+            HANDLER_FOR(FSTORE, fstore);
+            HANDLER_FOR(DSTORE, dstore);
+            HANDLER_FOR(ASTORE, astore);
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
