@@ -35,6 +35,23 @@ typedef ObjectRegion ObjectArrayRegion;
 ObjectRegion *Instantiate(VirtualMachine *vm, ClassFile *cf);
 
 /**
+ * Create a new instance of an array of given length. The array will be allocated in heap memory of the virtual machine. 
+ */
+PrimitiveArrayRegion *InstantiateArray(VirtualMachine *vm, uint8_t flags, size_t length);
+
+/**
+ * Create a new instance of an array of objects of given class. The array will be allocated in heap memory of the VM.
+ */
+ObjectArrayRegion *InstantiateObjectArray(VirtualMachine *vm, ClassFile *cf, size_t length);
+
+/**
+ * Sets a value in the array at given index. The size of the value will be computed automatically and copied from the
+ * provided pointer. The function accepts both PrimitiveArrayRegion and ObjectArrayRegion. Passing anything else will result in returning 0.
+ * Otherwise returns 1.
+ */
+int SetArrayValue(HeapRegion *instance, size_t index, void *from);
+
+/**
  * Sets a value for a field with given name. The field will be checked if length
  * matches the type of field. If this check passes LENGTH bytes are copied from FROM address.
  */

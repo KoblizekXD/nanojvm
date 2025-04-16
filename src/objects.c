@@ -48,6 +48,53 @@ ObjectRegion *Instantiate(VirtualMachine *vm, ClassFile *cf)
     return region;
 }
 
+void set_heap_array_el_size(uint8_t* flags, uint8_t value)
+{
+    *flags &= ~(HEAP_ARRAY_EL_SIZE_0 | HEAP_ARRAY_EL_SIZE_1);
+
+    switch (value) {
+        case 1:
+            break;
+        case 2:
+            *flags |= HEAP_ARRAY_EL_SIZE_0; // 01
+            break;
+        case 4:
+            *flags |= HEAP_ARRAY_EL_SIZE_1; // 10
+            break;
+        case 8:
+            *flags |= (HEAP_ARRAY_EL_SIZE_0 | HEAP_ARRAY_EL_SIZE_1); // 11
+            break;
+        default:
+            break;
+    }
+}
+
+PrimitiveArrayRegion *InstantiateArray(VirtualMachine *vm, uint8_t flags, size_t length)
+{
+    PrimitiveArrayRegion *region = (void*) Allocate(vm->heap, sizeof(PrimitiveArrayRegion) + (flags * length));
+    if (region == NULL) {
+        warn("Region is NULL, check logs for possible OutOfMemory");
+    } else {
+        region->metadata |= HEAP_TYPE_0;
+        set_heap_array_el_size(&region->metadata, flags);
+    }
+
+    return region;
+}
+
+ObjectArrayRegion *InstantiateObjectArray(VirtualMachine *vm, ClassFile *cf, size_t length)
+{
+    ObjectArrayRegion *region = (void*) Allocate(vm->heap, sizeof(ObjectArrayRegion) + (8 * length));
+    if (region == NULL) {
+        warn("Region is NULL, check logs for possible OutOfMemory");
+    } else {
+        region->cf = cf;
+        region->metadata |= HEAP_ARRAY_EL_SIZE_1 | HEAP_ARRAY_EL_SIZE_0 | HEAP_TYPE_1;
+    }
+
+    return region;
+}
+
 void SetValue(VirtualMachine *vm, ObjectRegion *instance, const char *field_name, void *from, size_t length)
 {
     size_t sum = 0;
@@ -139,6 +186,9 @@ ObjectRegion *InstantiateString(VirtualMachine *vm, const char *data)
     ObjectRegion *reg = Instantiate(vm, FindClass(vm, "java/lang/String"));
     uint8_t coder = 0;
     SetValue(vm, reg, "coder", &coder, 1);
+    size_t len = strlen(data);
+    PrimitiveArrayRegion *data_obj = InstantiateArray(vm, 1, len);
+    SetValue(vm, reg, "data", &data_obj, 8);
     vm->string_count++;
     vm->string_pool = realloc(vm->string_pool, sizeof(struct string_entry) * vm->string_count);
     vm->string_pool[vm->string_count - 1].hash = hash;
