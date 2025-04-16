@@ -360,6 +360,213 @@ INSTRUCTION(dstore)
     lvars->data[index] = CreateItem(STACK_ELEMENT_LONG | STACK_ELEMENT_FLOATING, &d);
 }
 
+INSTRUCTION(istore_0)
+{
+    int32_t i = PopInt(opstack);
+    free(lvars->data[0]);
+    lvars->data[0] = CreateItem(STACK_ELEMENT_INT, &i);
+}
+
+INSTRUCTION(istore_1)
+{
+    int32_t i = PopInt(opstack);
+    free(lvars->data[1]);
+    lvars->data[1] = CreateItem(STACK_ELEMENT_INT, &i);
+}
+
+INSTRUCTION(istore_2)
+{
+    int32_t i = PopInt(opstack);
+    free(lvars->data[2]);
+    lvars->data[2] = CreateItem(STACK_ELEMENT_INT, &i);
+}
+
+INSTRUCTION(istore_3)
+{
+    int32_t i = PopInt(opstack);
+    free(lvars->data[3]);
+    lvars->data[3] = CreateItem(STACK_ELEMENT_INT, &i);
+}
+
+INSTRUCTION(fstore_0)
+{
+    float f = PopFloat(opstack);
+    free(lvars->data[0]);
+    lvars->data[0] = CreateItem(STACK_ELEMENT_INT | STACK_ELEMENT_FLOATING, &f);
+}
+
+INSTRUCTION(fstore_1)
+{
+    float f = PopFloat(opstack);
+    free(lvars->data[1]);
+    lvars->data[1] = CreateItem(STACK_ELEMENT_INT | STACK_ELEMENT_FLOATING, &f);
+}
+
+INSTRUCTION(fstore_2)
+{
+    float f = PopFloat(opstack);
+    free(lvars->data[2]);
+    lvars->data[2] = CreateItem(STACK_ELEMENT_INT | STACK_ELEMENT_FLOATING, &f);
+}
+
+INSTRUCTION(fstore_3)
+{
+    float f = PopFloat(opstack);
+    free(lvars->data[3]);
+    lvars->data[3] = CreateItem(STACK_ELEMENT_INT | STACK_ELEMENT_FLOATING, &f);
+}
+
+INSTRUCTION(dstore_0)
+{
+    double d = PopDouble(opstack);
+    free(lvars->data[0]);
+    lvars->data[0] = CreateItem(STACK_ELEMENT_LONG | STACK_ELEMENT_FLOATING, &d);
+}
+
+INSTRUCTION(dstore_1)
+{
+    double d = PopDouble(opstack);
+    free(lvars->data[1]);
+    lvars->data[1] = CreateItem(STACK_ELEMENT_LONG | STACK_ELEMENT_FLOATING, &d);
+}
+
+INSTRUCTION(dstore_2)
+{
+    double d = PopDouble(opstack);
+    free(lvars->data[2]);
+    lvars->data[2] = CreateItem(STACK_ELEMENT_LONG | STACK_ELEMENT_FLOATING, &d);
+}
+
+INSTRUCTION(dstore_3)
+{
+    double d = PopDouble(opstack);
+    free(lvars->data[3]);
+    lvars->data[3] = CreateItem(STACK_ELEMENT_LONG | STACK_ELEMENT_FLOATING, &d);
+}
+
+INSTRUCTION(astore_0)
+{
+    void* ref = PopReference(opstack);
+    free(lvars->data[0]);
+    lvars->data[0] = CreateItem(STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG, ref);
+}
+
+INSTRUCTION(astore_1)
+{
+    void* ref = PopReference(opstack);
+    free(lvars->data[1]);
+    lvars->data[1] = CreateItem(STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG, ref);
+}
+
+INSTRUCTION(astore_2)
+{
+    void* ref = PopReference(opstack);
+    free(lvars->data[2]);
+    lvars->data[2] = CreateItem(STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG, ref);
+}
+
+INSTRUCTION(astore_3)
+{
+    void* ref = PopReference(opstack);
+    free(lvars->data[3]);
+    lvars->data[3] = CreateItem(STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG, ref);
+}
+
+INSTRUCTION(lstore_0)
+{
+    int64_t l = PopLong(opstack);
+    free(lvars->data[0]);
+    lvars->data[0] = CreateItem(STACK_ELEMENT_LONG, &l);
+}
+
+INSTRUCTION(lstore_1)
+{
+    int64_t l = PopLong(opstack);
+    free(lvars->data[1]);
+    lvars->data[1] = CreateItem(STACK_ELEMENT_LONG, &l);
+}
+
+INSTRUCTION(lstore_2)
+{
+    int64_t l = PopLong(opstack);
+    free(lvars->data[2]);
+    lvars->data[2] = CreateItem(STACK_ELEMENT_LONG, &l);
+}
+
+INSTRUCTION(lstore_3)
+{
+    int64_t l = PopLong(opstack);
+    free(lvars->data[3]);
+    lvars->data[3] = CreateItem(STACK_ELEMENT_LONG, &l);
+}
+
+INSTRUCTION(iastore)
+{
+    int32_t value = PopInt(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    SetArrayValue(arrayref, index, &value);
+}
+
+INSTRUCTION(fastore)
+{
+    float value = PopFloat(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    SetArrayValue(arrayref, index, &value);
+}
+
+INSTRUCTION(lastore)
+{
+    int64_t value = PopLong(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    SetArrayValue(arrayref, index, &value);
+}
+
+INSTRUCTION(dastore)
+{
+    double value = PopDouble(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    SetArrayValue(arrayref, index, &value);
+}
+
+INSTRUCTION(aastore)
+{
+    void *ref = PopReference(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    SetArrayValue(arrayref, index, ref);
+}
+
+INSTRUCTION(bastore)
+{
+    int32_t value = PopInt(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    int8_t byteValue = (int8_t)value;
+    SetArrayValue(arrayref, index, &byteValue);
+}
+
+INSTRUCTION(castore)
+{
+    int32_t value = PopInt(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    uint16_t charValue = (uint16_t)value;
+    SetArrayValue(arrayref, index, &charValue);
+}
+
+INSTRUCTION(sastore)
+{
+    int32_t value = PopInt(opstack);
+    int32_t index = PopInt(opstack);
+    HeapRegion *arrayref = PopReference(opstack);
+    int16_t shortValue = (int16_t)value;  // truncate
+    SetArrayValue(arrayref, index, &shortValue);
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -436,6 +643,34 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(FSTORE, fstore);
             HANDLER_FOR(DSTORE, dstore);
             HANDLER_FOR(ASTORE, astore);
+            HANDLER_FOR(ISTORE_0, istore_0);
+            HANDLER_FOR(ISTORE_1, istore_1);
+            HANDLER_FOR(ISTORE_2, istore_2);
+            HANDLER_FOR(ISTORE_3, istore_3);
+            HANDLER_FOR(LSTORE_0, lstore_0);
+            HANDLER_FOR(LSTORE_1, lstore_1);
+            HANDLER_FOR(LSTORE_2, lstore_2);
+            HANDLER_FOR(LSTORE_3, lstore_3);
+            HANDLER_FOR(FSTORE_0, fstore_0);
+            HANDLER_FOR(FSTORE_1, fstore_1);
+            HANDLER_FOR(FSTORE_2, fstore_2);
+            HANDLER_FOR(FSTORE_3, fstore_3);
+            HANDLER_FOR(DSTORE_0, dstore_0);
+            HANDLER_FOR(DSTORE_1, dstore_1);
+            HANDLER_FOR(DSTORE_2, dstore_2);
+            HANDLER_FOR(DSTORE_3, dstore_3);
+            HANDLER_FOR(ASTORE_0, astore_0);
+            HANDLER_FOR(ASTORE_1, astore_1);
+            HANDLER_FOR(ASTORE_2, astore_2);
+            HANDLER_FOR(ASTORE_3, astore_3);
+            HANDLER_FOR(IASTORE, iastore);
+            HANDLER_FOR(LASTORE, lastore);
+            HANDLER_FOR(FASTORE, fastore);
+            HANDLER_FOR(DASTORE, dastore);
+            HANDLER_FOR(AASTORE, aastore);
+            HANDLER_FOR(BASTORE, bastore);
+            HANDLER_FOR(CASTORE, castore);
+            HANDLER_FOR(SASTORE, sastore);
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
