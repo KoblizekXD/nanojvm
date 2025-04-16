@@ -44,7 +44,7 @@ ObjectRegion *Instantiate(VirtualMachine *vm, ClassFile *cf)
         region->cf = cf;
         region->metadata |= HEAP_TYPE_0 | HEAP_TYPE_1;
     }
-
+;
     return region;
 }
 
@@ -93,6 +93,70 @@ ObjectArrayRegion *InstantiateObjectArray(VirtualMachine *vm, ClassFile *cf, siz
     }
 
     return region;
+}
+
+int SetArrayValue(HeapRegion *instance, size_t index, void *from)
+{
+    if ((instance->metadata & (HEAP_TYPE_0 | HEAP_TYPE_1)) == (HEAP_TYPE_0 | HEAP_TYPE_1)) return 0;
+    size_t elsize = GetArrayElementSize(instance);
+    void *off = NULL;
+    if (instance->metadata & HEAP_TYPE_0) {
+        off = (uint8_t*) instance + sizeof(PrimitiveArrayRegion) + (index * elsize);
+    } else {
+        off = (uint8_t*) instance + sizeof(ObjectArrayRegion) + (index * elsize);
+    }
+    memcpy(off, from, elsize);
+    return 1;
+}
+
+uint8_t item_metadata_of(HeapRegion *reg)
+{
+    if (reg->metadata & HEAP_TYPE_0) {
+        size_t s = GetArrayElementSize(reg);
+        return (s == 8 ? STACK_ELEMENT_LONG : s == 4 ? STACK_ELEMENT_INT : s == 2 ? STACK_ELEMENT_SHORT : STACK_ELEMENT_BYTE) | (reg->metadata & HEAP_ARRAY_FLOATING ? STACK_ELEMENT_FLOATING : 0);
+    } else return STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG;
+}
+
+Item *GetArrayValue(HeapRegion *instance, size_t index)
+{
+    if ((instance->metadata & (HEAP_TYPE_0 | HEAP_TYPE_1)) == (HEAP_TYPE_0 | HEAP_TYPE_1)) return NULL;
+    size_t elsize = GetArrayElementSize(instance);
+    void *off = NULL;
+    if (instance->metadata & HEAP_TYPE_0) {
+        off = (uint8_t*) instance + sizeof(PrimitiveArrayRegion) + (index * elsize);
+    } else {
+        off = (uint8_t*) instance + sizeof(ObjectArrayRegion) + (index * elsize);
+    }
+    return CreateItem(item_metadata_of(instance), off); 
+}
+
+size_t GetArrayElementSize(HeapRegion *region)
+{
+    uint8_t flags = region->metadata;
+    uint8_t size_flags = flags & (HEAP_ARRAY_EL_SIZE_0 | HEAP_ARRAY_EL_SIZE_1);
+    
+    switch (size_flags) {
+        case 0:
+            return 1;
+        case HEAP_ARRAY_EL_SIZE_0:
+            return 2;
+        case HEAP_ARRAY_EL_SIZE_1:
+            return 4;
+        case (HEAP_ARRAY_EL_SIZE_0 | HEAP_ARRAY_EL_SIZE_1):
+            return 8;
+        default:
+            return 0;
+    }
+}
+
+size_t GetArrayLength(HeapRegion *instance)
+{
+    size_t per = GetArrayElementSize(instance);
+    if (instance->metadata & HEAP_TYPE_0) {
+        return (instance->size - sizeof(PrimitiveArrayRegion)) / per;
+    } else {
+        return (instance->size - sizeof(ObjectArrayRegion)) / per; 
+    }
 }
 
 void SetValue(VirtualMachine *vm, ObjectRegion *instance, const char *field_name, void *from, size_t length)

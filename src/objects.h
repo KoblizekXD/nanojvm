@@ -52,6 +52,22 @@ ObjectArrayRegion *InstantiateObjectArray(VirtualMachine *vm, ClassFile *cf, siz
 int SetArrayValue(HeapRegion *instance, size_t index, void *from);
 
 /**
+ * Gets a value present on given array index wrapped as a Item. If given instance is not
+ * an array, NULL will be returned. Getting value out of bounds of the array will result in crash.
+ */
+Item *GetArrayValue(HeapRegion *instance, size_t index);
+
+/**
+ * Returns a size of a 1 array element. It will be either 8, 4, 2 or 1.
+ */
+size_t GetArrayElementSize(HeapRegion *region);
+
+/**
+ * Returns a length of given array in heap memory.
+ */
+size_t GetArrayLength(HeapRegion *reg);
+
+/**
  * Sets a value for a field with given name. The field will be checked if length
  * matches the type of field. If this check passes LENGTH bytes are copied from FROM address.
  */

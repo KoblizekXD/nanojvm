@@ -12,6 +12,7 @@
 // Structure-specific metadata:
 #define HEAP_ARRAY_EL_SIZE_0 (1 << 3)
 #define HEAP_ARRAY_EL_SIZE_1 (1 << 4)
+#define HEAP_ARRAY_FLOATING (1 << 5)
 
 typedef struct heap_region {
     uint8_t metadata;
