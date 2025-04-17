@@ -107,6 +107,7 @@ For information about VM arguments, see:
 - [x] Exception handling.
 - [ ] Garbage collection.
 - [ ] JIT (maybe?).
+- [ ] Assertions(a lot of code doesn't assert types stack requires etc.)
 
 ---
 

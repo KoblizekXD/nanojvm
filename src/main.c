@@ -37,6 +37,6 @@ int main(int argc, char **argv)
 
     InvokeMethod(vm, m);
 
-    TearDown(vm);
+    // TearDown(vm);
     return 0;
 }

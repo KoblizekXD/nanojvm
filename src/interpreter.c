@@ -1146,6 +1146,142 @@ INSTRUCTION(int_cmp)
         frame->pc = byte + off;
 }
 
+INSTRUCTION(goto)
+{
+    int16_t offset = Read16();
+    frame->pc += offset - 3;
+}
+
+INSTRUCTION(goto_w)
+{
+    int32_t offset = 
+        ((int32_t)frame->pc[0] << 24) |
+        ((int32_t)frame->pc[1] << 16) |
+        ((int32_t)frame->pc[2] << 8)  |
+        ((int32_t)frame->pc[3]);
+
+    frame->pc += offset - 5;
+}
+
+INSTRUCTION(getstatic)
+{
+    uint16_t index = Read16();
+    MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
+    ClassFile *target = FindClass(vm, *ref.class_info->name);
+    Field *f = GetFieldByName(target, *ref.name_and_type->name);
+    if (f->value)
+        PushStack(opstack, Copy(f->value));
+    else PushReference(opstack, NULL);
+}
+
+INSTRUCTION(putstatic)
+{
+    uint16_t index = Read16();
+    Item *value = PopStack(opstack);
+    MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
+    ClassFile *target = FindClass(vm, *ref.class_info->name);
+    Field *f = GetFieldByName(target, *ref.name_and_type->name);
+    f->value = value;
+}
+
+INSTRUCTION(getfield)
+{
+    uint16_t index = Read16();
+    ObjectRegion *object = PopReference(opstack);
+    MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
+    PushStack(opstack, GetValue(vm, object, *ref.name_and_type->name));
+}
+
+INSTRUCTION(putfield)
+{
+    uint16_t index = Read16();
+    Item *value = PopStack(opstack);
+    ObjectRegion *object = PopReference(opstack);
+    MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
+    SetValueEx(vm, object, *ref.name_and_type->name, value);
+}
+
+INSTRUCTION(new)
+{
+    uint16_t index = Read16();
+    ClassInfo ci = frame->method->cf->constant_pool[index - 1].info._class;
+    PushReference(opstack, Instantiate(vm, FindClass(vm, *ci.name)));
+}
+
+INSTRUCTION(newarray)
+{
+    uint8_t type = Read8();
+    int32_t count = PopInt(opstack);
+    int flags = 0;
+    switch (type) {
+        case 4:
+        case 5:
+        case 8:
+            flags = 1;
+            break;
+        case 9:
+            flags = 2;
+            break;
+        case 6:
+        case 10:
+            flags = 4;
+            break;
+        case 7:
+        case 11:
+            flags = 8;
+            break;
+    }
+    PushReference(opstack, InstantiateArray(vm, flags, count));
+}
+
+INSTRUCTION(anewarray)
+{
+    uint16_t index = Read16();
+    int32_t count = PopInt(opstack);
+    PushReference(opstack, InstantiateObjectArray(vm, FindClass(vm, *frame->method->cf->constant_pool[index - 1].info._class.name), count));
+}
+
+INSTRUCTION(arraylength)
+{
+    HeapRegion *reg = PopReference(opstack);
+    PushInt(opstack, GetArrayLength(reg));
+}
+
+INSTRUCTION(checkcast)
+{
+    uint16_t index = Read16();
+    void *ref = PopReference(opstack);
+    if (ref == NULL) PushReference(opstack, ref);
+    // TODO: Finish this actually
+    warn("Cast checks are not finished yet");
+}
+
+INSTRUCTION(athrow)
+{
+   ObjectRegion *reg = PopReference(opstack);
+   Item *ref = GetValue(vm, reg, "detailMessage");
+   ObjectRegion *str = NULL;
+   memcpy(&str, ref->data, 8);
+   free(ref);
+   if (str == NULL) {
+       ThrowException(vm, reg->cf->name, "");
+   } else {
+       ref = GetValue(vm, str, "data");
+       PrimitiveArrayRegion *bytes;
+       memcpy(&bytes, ref->data, 8);
+       ThrowException(vm, reg->cf->name, "%.*s", bytes->data, GetArrayLength((void*) bytes));
+   } 
+}
+
+INSTRUCTION(invokespecial)
+{
+    uint16_t index = Read16();
+    MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
+    if ((StringEquals(frame->method->name, "<init>") && vm->options->flags & OPTION_DISABLE_INIT)
+        || ((StringEquals(frame->method->name, "<clinit>") && vm->options->flags & OPTION_DISABLE_CLINIT)))
+        InvokeMethod(vm, GetMethodByNameAndDescriptor(FindClass(vm, *ref.class_info->name), *ref.name_and_type->name, *ref.name_and_type->descriptor));
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -1162,6 +1298,7 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
 
     while (frame->pc < (code->code + code->code_length)) {
         uint8_t opcode = Read8();
+        debug("Current instruction: %s(0x%X)", GetInstructionName(opcode), opcode);
         switch (opcode) {
             case NOP: break;
             HANDLER_FOR(ACONST_NULL, aconst_null);
@@ -1301,6 +1438,21 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(FCMPG, fcmpg);
             HANDLER_FOR(DCMPL, dcmpl);
             HANDLER_FOR(DCMPG, dcmpg);
+            HANDLER_FOR(I2L, i2l);
+            HANDLER_FOR(I2F, i2f);
+            HANDLER_FOR(I2D, i2d);
+            HANDLER_FOR(L2I, l2i);
+            HANDLER_FOR(L2F, l2f);
+            HANDLER_FOR(L2D, l2d);
+            HANDLER_FOR(F2I, f2i);
+            HANDLER_FOR(F2L, f2l);
+            HANDLER_FOR(F2D, f2d);
+            HANDLER_FOR(D2I, d2i);
+            HANDLER_FOR(D2L, d2l);
+            HANDLER_FOR(D2F, d2f);
+            HANDLER_FOR(I2B, i2b);
+            HANDLER_FOR(I2C, i2c);
+            HANDLER_FOR(I2S, i2s);
             case IFEQ:
             case IFNE:
             case IFGT:
@@ -1321,6 +1473,31 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             case IF_ACMPNE:
                 handler_ref_cmp(PASS_PARAMS);
                 break;
+            HANDLER_FOR(GOTO, goto);
+            HANDLER_FOR(GOTO_W, goto_w);
+            case RETURN:
+                return NULL;
+            case DRETURN:
+            case FRETURN:
+            case LRETURN:
+            case ARETURN:
+                return PopStack(opstack); 
+            case IRETURN: {
+                Item *value = PopStack(opstack);
+                int32_t buff = 0;
+                memcpy(&buff, value->data, GetItemValueSize(value));
+                return CreateItem(STACK_ELEMENT_INT, &buff);
+            }
+            HANDLER_FOR(NEW, new);
+            HANDLER_FOR(NEWARRAY, newarray);
+            HANDLER_FOR(ANEWARRAY, anewarray);
+            HANDLER_FOR(ARRAYLENGTH, arraylength);
+            HANDLER_FOR(ATHROW, athrow);
+            HANDLER_FOR(GETSTATIC, getstatic);
+            HANDLER_FOR(PUTSTATIC, putstatic);
+            HANDLER_FOR(GETFIELD, getfield);
+            HANDLER_FOR(PUTFIELD, putfield);
+            HANDLER_FOR(INVOKESPECIAL, invokespecial);
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;

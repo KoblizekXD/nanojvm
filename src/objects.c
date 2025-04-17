@@ -1,4 +1,4 @@
-#include "mem/exstack.h"
+#include <mem/exstack.h>
 #include <mem/heap.h>
 #include <stdlib.h>
 #include <util/logging.h>
@@ -220,6 +220,9 @@ Item *GetValue(VirtualMachine *vm, ObjectRegion *instance, const char *field_nam
                             break;
                         case 'J':
                             metadata |= STACK_ELEMENT_LONG;
+                            break;
+                        case 'L':
+                            metadata |= STACK_ELEMENT_IS_ADDRESS | STACK_ELEMENT_LONG;
                             break;
                         default:
                             warn("Undefined descriptor %s", f->descriptor);
