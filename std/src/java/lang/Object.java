@@ -12,9 +12,6 @@ public class Object {
         return this == obj;
     }
 
-    protected void finalize() throws Throwable { } // Deprecated in favor of #destruct()
-
-    // Calls on GC cleanup
-    protected void destruct() throws Throwable {
+    protected void finalize() throws Throwable {
     }
 }
