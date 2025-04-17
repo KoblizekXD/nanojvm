@@ -567,6 +567,104 @@ INSTRUCTION(sastore)
     SetArrayValue(arrayref, index, &shortValue);
 }
 
+INSTRUCTION(pop)
+{
+    free(PopStack(opstack));
+}
+
+INSTRUCTION(pop2)
+{
+    Item *value1 = PopStack(opstack);
+    if (value1->metadata & STACK_ELEMENT_LONG && !(value1->metadata & STACK_ELEMENT_IS_ADDRESS))
+        free(value1);
+    else {
+        free(value1);
+        free(PopStack(opstack));
+    }
+}
+
+INSTRUCTION(dup)
+{
+    Item *i = opstack->data[opstack->top - 1];
+    PushStack(opstack, Copy(i));
+}
+
+INSTRUCTION(dup_x1)
+{
+    Item *value1 = PopStack(opstack);
+    Item *value2 = PopStack(opstack);
+    PushStack(opstack, Copy(value1));
+    PushStack(opstack, value2);
+    PushStack(opstack, value1);
+}
+
+INSTRUCTION(dup_x2)
+{
+    Item *value1 = PopStack(opstack);
+
+    Item *value2 = PopStack(opstack);
+    if (value2->metadata & STACK_ELEMENT_LONG && !(value2->metadata & STACK_ELEMENT_IS_ADDRESS)) {
+        PushStack(opstack, Copy(value1));
+        PushStack(opstack, value2);
+        PushStack(opstack, value1);
+    } else {
+        Item *value3 = PopStack(opstack);
+        PushStack(opstack, Copy(value1));
+        PushStack(opstack, value3);
+        PushStack(opstack, value2);
+        PushStack(opstack, value1);
+    }
+}
+
+INSTRUCTION(dup2)
+{
+    Item *value1 = PopStack(opstack);
+    
+    if (value1->metadata & STACK_ELEMENT_LONG && !(value1->metadata & STACK_ELEMENT_IS_ADDRESS)) {
+        PushStack(opstack, Copy(value1));
+        PushStack(opstack, value1);
+    } else {
+        Item *value2 = PopStack(opstack);
+        PushStack(opstack, Copy(value2));
+        PushStack(opstack, Copy(value1));
+        PushStack(opstack, value2);
+        PushStack(opstack, value1);
+    }
+}
+
+INSTRUCTION(dup2_x1)
+{
+    Item *value1 = PopStack(opstack);
+
+    if (value1->metadata & STACK_ELEMENT_LONG && !(value1->metadata & STACK_ELEMENT_IS_ADDRESS)) {
+        Item *value2 = PopStack(opstack);
+        PushStack(opstack, Copy(value1));
+        PushStack(opstack, value2);
+        PushStack(opstack, value1);
+    } else {
+        Item *value2 = PopStack(opstack);
+        Item *value3 = PopStack(opstack);
+        PushStack(opstack, Copy(value2));
+        PushStack(opstack, Copy(value1));
+        PushStack(opstack, value3);
+        PushStack(opstack, value2);
+        PushStack(opstack, value1);
+    }
+}
+
+INSTRUCTION(dup2_x2)
+{
+    error("I don't actually like dup2_x2 that much, if you read this, report it as a bug");
+}
+
+INSTRUCTION(swap)
+{
+    Item *value1 = PopStack(opstack);
+    Item *value2 = PopStack(opstack);
+    PushStack(opstack, value1);
+    PushStack(opstack, value2);
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -671,6 +769,15 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(BASTORE, bastore);
             HANDLER_FOR(CASTORE, castore);
             HANDLER_FOR(SASTORE, sastore);
+            HANDLER_FOR(POP, pop);
+            HANDLER_FOR(POP2, pop2);
+            HANDLER_FOR(DUP, dup);
+            HANDLER_FOR(DUP_X1, dup_x1);
+            HANDLER_FOR(DUP_X2, dup_x2);
+            HANDLER_FOR(DUP2, dup2);
+            HANDLER_FOR(DUP2_X1, dup2_x1);
+            HANDLER_FOR(DUP2_X2, dup2_x2);
+            HANDLER_FOR(SWAP, swap);
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
