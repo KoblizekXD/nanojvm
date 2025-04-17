@@ -1017,6 +1017,135 @@ INSTRUCTION(i2s)
     PushInt(opstack, (int16_t)value);
 }
 
+INSTRUCTION(lcmp)
+{
+    int64_t v2 = PopLong(opstack);
+    int64_t v1 = PopLong(opstack);
+    PushInt(opstack, (v1 < v2) ? -1 : (v1 > v2 ? 1 : 0));
+}
+
+INSTRUCTION(fcmpl)
+{
+    float v2 = PopFloat(opstack);
+    float v1 = PopFloat(opstack);
+    if (isnan(v1) || isnan(v2))
+        PushInt(opstack, -1);
+    else
+        PushInt(opstack, (v1 < v2) ? -1 : (v1 > v2 ? 1 : 0));
+}
+
+INSTRUCTION(fcmpg)
+{
+    float v2 = PopFloat(opstack);
+    float v1 = PopFloat(opstack);
+    if (isnan(v1) || isnan(v2))
+        PushInt(opstack, 1);
+    else
+        PushInt(opstack, (v1 < v2) ? -1 : (v1 > v2 ? 1 : 0));
+}
+
+INSTRUCTION(dcmpl)
+{
+    double v2 = PopDouble(opstack);
+    double v1 = PopDouble(opstack);
+    if (isnan(v1) || isnan(v2))
+        PushInt(opstack, -1);
+    else
+        PushInt(opstack, (v1 < v2) ? -1 : (v1 > v2 ? 1 : 0));
+}
+
+INSTRUCTION(dcmpg)
+{
+    double v2 = PopDouble(opstack);
+    double v1 = PopDouble(opstack);
+    if (isnan(v1) || isnan(v2))
+        PushInt(opstack, 1);
+    else
+        PushInt(opstack, (v1 < v2) ? -1 : (v1 > v2 ? 1 : 0));
+}
+
+INSTRUCTION(cond_jump)
+{
+    uint16_t off = Read16();
+    uint8_t *byte = (frame->pc - 3);
+    int32_t value = PopInt(opstack);
+    uint8_t jump = 0;
+    switch (*byte) {
+        case IFEQ:
+            if (value == 0) jump = 1;
+            break;
+        case IFNE:
+            if (value != 0) jump = 1;
+            break;
+        case IFLT:
+            if (value <= 0) jump = 1;
+            break;
+        case IFGE:
+            if (value >= 0) jump = 1;
+            break;
+        case IFGT:
+            if (value > 0) jump = 1;
+            break;
+        case IFLE:
+            if (value < 0) jump = 1;
+            break;
+    }
+    if (jump)
+        frame->pc = byte + off;
+}
+
+INSTRUCTION(ref_cmp)
+{
+    uint16_t off = Read16();
+    uint8_t *byte = (frame->pc - 3);
+    void *value2 = PopReference(opstack);
+    void *value1 = PopReference(opstack);
+    uint8_t jump = 0;
+    switch (*byte) {
+        case IF_ACMPEQ:
+            if (value2 == value1) jump = 1;
+            break;
+        case IF_ACMPNE:
+            if (value2 != value1) jump = 1;
+            break;
+    }
+    if (jump)
+        frame->pc = byte + off;
+}
+
+INSTRUCTION(int_cmp)
+{
+    uint16_t off = Read16();
+    uint8_t *byte = frame->pc - 3;
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    uint8_t jump = 0;
+
+    switch (*byte) {
+        case IF_ICMPEQ:
+            jump = (value1 == value2);
+            break;
+        case IF_ICMPNE:
+            jump = (value1 != value2);
+            break;
+        case IF_ICMPLT:
+            jump = (value1 < value2);
+            break;
+        case IF_ICMPGE:
+            jump = (value1 >= value2);
+            break;
+        case IF_ICMPGT:
+            jump = (value1 > value2);
+            break;
+        case IF_ICMPLE:
+            jump = (value1 <= value2);
+            break;
+    }
+
+    if (jump)
+        frame->pc = byte + off;
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -1167,6 +1296,31 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(IXOR, ixor);
             HANDLER_FOR(LXOR, lxor);
             HANDLER_FOR(IINC, iinc);
+            HANDLER_FOR(LCMP, lcmp);
+            HANDLER_FOR(FCMPL, fcmpl);
+            HANDLER_FOR(FCMPG, fcmpg);
+            HANDLER_FOR(DCMPL, dcmpl);
+            HANDLER_FOR(DCMPG, dcmpg);
+            case IFEQ:
+            case IFNE:
+            case IFGT:
+            case IFGE:
+            case IFLT:
+            case IFLE:
+                handler_cond_jump(PASS_PARAMS);
+                break;
+            case IF_ICMPEQ:
+            case IF_ICMPNE:
+            case IF_ICMPGT:
+            case IF_ICMPGE:
+            case IF_ICMPLT:
+            case IF_ICMPLE:
+                handler_int_cmp(PASS_PARAMS);
+                break;
+            case IF_ACMPEQ:
+            case IF_ACMPNE:
+                handler_ref_cmp(PASS_PARAMS);
+                break;
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
