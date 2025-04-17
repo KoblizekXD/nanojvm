@@ -252,6 +252,7 @@ ObjectRegion *InstantiateString(VirtualMachine *vm, const char *data)
     SetValue(vm, reg, "coder", &coder, 1);
     size_t len = strlen(data);
     PrimitiveArrayRegion *data_obj = InstantiateArray(vm, 1, len);
+    memcpy((uint8_t*) data_obj + sizeof(PrimitiveArrayRegion), data, len);
     SetValue(vm, reg, "data", &data_obj, 8);
     vm->string_count++;
     vm->string_pool = realloc(vm->string_pool, sizeof(struct string_entry) * vm->string_count);

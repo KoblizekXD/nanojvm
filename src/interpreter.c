@@ -1,3 +1,4 @@
+#include <math.h>
 #include <mem/exstack.h>
 #include <stdlib.h>
 #include <util/strings.h>
@@ -665,6 +666,357 @@ INSTRUCTION(swap)
     PushStack(opstack, value2);
 }
 
+INSTRUCTION(iadd)
+{
+    int32_t value1 = PopInt(opstack);
+    int32_t value2 = PopInt(opstack);
+    PushInt(opstack, value1 + value2);
+}
+
+INSTRUCTION(isub)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 - value2);
+}
+
+INSTRUCTION(imul)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 * value2);
+}
+
+INSTRUCTION(idiv)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 / value2);
+}
+
+INSTRUCTION(ladd)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 + value2);
+}
+
+INSTRUCTION(lsub)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 - value2);
+}
+
+INSTRUCTION(lmul)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 * value2);
+}
+
+INSTRUCTION(ldiv)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 / value2);
+}
+
+INSTRUCTION(fadd)
+{
+    float value2 = PopFloat(opstack);
+    float value1 = PopFloat(opstack);
+    PushFloat(opstack, value1 + value2);
+}
+
+INSTRUCTION(fsub)
+{
+    float value2 = PopFloat(opstack);
+    float value1 = PopFloat(opstack);
+    PushFloat(opstack, value1 - value2);
+}
+
+INSTRUCTION(fmul)
+{
+    float value2 = PopFloat(opstack);
+    float value1 = PopFloat(opstack);
+    PushFloat(opstack, value1 * value2);
+}
+
+INSTRUCTION(fdiv)
+{
+    float value2 = PopFloat(opstack);
+    float value1 = PopFloat(opstack);
+    PushFloat(opstack, value1 / value2);
+}
+
+INSTRUCTION(dadd)
+{
+    double value2 = PopDouble(opstack);
+    double value1 = PopDouble(opstack);
+    PushDouble(opstack, value1 + value2);
+}
+
+INSTRUCTION(dsub)
+{
+    double value2 = PopDouble(opstack);
+    double value1 = PopDouble(opstack);
+    PushDouble(opstack, value1 - value2);
+}
+
+INSTRUCTION(dmul)
+{
+    double value2 = PopDouble(opstack);
+    double value1 = PopDouble(opstack);
+    PushDouble(opstack, value1 * value2);
+}
+
+INSTRUCTION(ddiv)
+{
+    double value2 = PopDouble(opstack);
+    double value1 = PopDouble(opstack);
+    PushDouble(opstack, value1 / value2);
+}
+
+INSTRUCTION(irem)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 % value2);
+}
+
+INSTRUCTION(lrem)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 % value2);
+}
+
+INSTRUCTION(frem)
+{
+    float value2 = PopFloat(opstack);
+    float value1 = PopFloat(opstack);
+    PushFloat(opstack, fmodf(value1, value2));
+}
+
+INSTRUCTION(drem)
+{
+    double value2 = PopDouble(opstack);
+    double value1 = PopDouble(opstack);
+    PushDouble(opstack, fmod(value1, value2));
+}
+
+INSTRUCTION(ineg)
+{
+    int32_t value = PopInt(opstack);
+    PushInt(opstack, -value);
+}
+
+INSTRUCTION(lneg)
+{
+    int64_t value = PopLong(opstack);
+    PushLong(opstack, -value);
+}
+
+INSTRUCTION(fneg)
+{
+    float value = PopFloat(opstack);
+    PushFloat(opstack, -value);
+}
+
+INSTRUCTION(dneg)
+{
+    double value = PopDouble(opstack);
+    PushDouble(opstack, -value);
+}
+
+INSTRUCTION(ishl)
+{
+    int32_t shift = PopInt(opstack) & 0x1F;
+    int32_t value = PopInt(opstack);
+    PushInt(opstack, value << shift);
+}
+
+INSTRUCTION(lshl)
+{
+    int32_t shift = PopInt(opstack) & 0x3F;
+    int64_t value = PopLong(opstack);
+    PushLong(opstack, value << shift);
+}
+
+INSTRUCTION(ishr)
+{
+    int32_t shift = PopInt(opstack) & 0x1F;
+    int32_t value = PopInt(opstack);
+    PushInt(opstack, value >> shift); // arithmetic shift
+}
+
+INSTRUCTION(lshr)
+{
+    int32_t shift = PopInt(opstack) & 0x3F;
+    int64_t value = PopLong(opstack);
+    PushLong(opstack, value >> shift); // arithmetic shift
+}
+
+INSTRUCTION(iushr)
+{
+    int32_t shift = PopInt(opstack) & 0x1F;
+    uint32_t value = (uint32_t)PopInt(opstack);
+    PushInt(opstack, value >> shift); // logical shift
+}
+
+INSTRUCTION(lushr)
+{
+    int32_t shift = PopInt(opstack) & 0x3F;
+    uint64_t value = (uint64_t)PopLong(opstack);
+    PushLong(opstack, value >> shift); // logical shift
+}
+
+INSTRUCTION(iand)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 & value2);
+}
+
+INSTRUCTION(land)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 & value2);
+}
+
+INSTRUCTION(ior)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 | value2);
+}
+
+INSTRUCTION(lor)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 | value2);
+}
+
+INSTRUCTION(ixor)
+{
+    int32_t value2 = PopInt(opstack);
+    int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 ^ value2);
+}
+
+INSTRUCTION(lxor)
+{
+    int64_t value2 = PopLong(opstack);
+    int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 ^ value2);
+}
+
+INSTRUCTION(iinc)
+{
+    uint8_t index = Read8();
+    int8_t constant = Read8();
+    Item *i = lvars->data[index];
+    if (i && i->metadata & STACK_ELEMENT_INT) {
+        int32_t temp = 0;
+        memcpy(&temp, i->data, 4);
+        temp += constant;
+        memcpy(i->data, &temp, 4);
+    } else warn("Expecting int lvar on index %d", index);
+}
+
+INSTRUCTION(i2l)
+{
+    int32_t value = PopInt(opstack);
+    PushLong(opstack, (int64_t)value);
+}
+
+INSTRUCTION(i2f)
+{
+    int32_t value = PopInt(opstack);
+    PushFloat(opstack, (float)value);
+}
+
+INSTRUCTION(i2d)
+{
+    int32_t value = PopInt(opstack);
+    PushDouble(opstack, (double)value);
+}
+
+INSTRUCTION(l2i)
+{
+    int64_t value = PopLong(opstack);
+    PushInt(opstack, (int32_t)value);
+}
+
+INSTRUCTION(l2f)
+{
+    int64_t value = PopLong(opstack);
+    PushFloat(opstack, (float)value);
+}
+
+INSTRUCTION(l2d)
+{
+    int64_t value = PopLong(opstack);
+    PushDouble(opstack, (double)value);
+}
+
+INSTRUCTION(f2i)
+{
+    float value = PopFloat(opstack);
+    PushInt(opstack, (int32_t)value);
+}
+
+INSTRUCTION(f2l)
+{
+    float value = PopFloat(opstack);
+    PushLong(opstack, (int64_t)value);
+}
+
+INSTRUCTION(f2d)
+{
+    float value = PopFloat(opstack);
+    PushDouble(opstack, (double)value);
+}
+
+INSTRUCTION(d2i)
+{
+    double value = PopDouble(opstack);
+    PushInt(opstack, (int32_t)value);
+}
+
+INSTRUCTION(d2l)
+{
+    double value = PopDouble(opstack);
+    PushLong(opstack, (int64_t)value);
+}
+
+INSTRUCTION(d2f)
+{
+    double value = PopDouble(opstack);
+    PushFloat(opstack, (float)value);
+}
+
+INSTRUCTION(i2b)
+{
+    int32_t value = PopInt(opstack);
+    PushInt(opstack, (int8_t)value);
+}
+
+INSTRUCTION(i2c)
+{
+    int32_t value = PopInt(opstack);
+    PushInt(opstack, (uint16_t)value);
+}
+
+INSTRUCTION(i2s)
+{
+    int32_t value = PopInt(opstack);
+    PushInt(opstack, (int16_t)value);
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -778,6 +1130,43 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(DUP2_X1, dup2_x1);
             HANDLER_FOR(DUP2_X2, dup2_x2);
             HANDLER_FOR(SWAP, swap);
+            HANDLER_FOR(IADD, iadd);
+            HANDLER_FOR(LADD, ladd);
+            HANDLER_FOR(FADD, fadd);
+            HANDLER_FOR(DADD, dadd);
+            HANDLER_FOR(ISUB, isub);
+            HANDLER_FOR(LSUB, lsub);
+            HANDLER_FOR(FSUB, fsub);
+            HANDLER_FOR(DSUB, dsub);
+            HANDLER_FOR(IMUL, imul);
+            HANDLER_FOR(LMUL, lmul);
+            HANDLER_FOR(FMUL, fmul);
+            HANDLER_FOR(DMUL, dmul);
+            HANDLER_FOR(IDIV, idiv);
+            HANDLER_FOR(LDIV, ldiv);
+            HANDLER_FOR(FDIV, fdiv);
+            HANDLER_FOR(DDIV, ddiv);
+            HANDLER_FOR(IREM, irem);
+            HANDLER_FOR(LREM, lrem);
+            HANDLER_FOR(FREM, frem);
+            HANDLER_FOR(DREM, drem);
+            HANDLER_FOR(INEG, ineg);
+            HANDLER_FOR(LNEG, lneg);
+            HANDLER_FOR(FNEG, fneg);
+            HANDLER_FOR(DNEG, dneg);
+            HANDLER_FOR(ISHL, ishl);
+            HANDLER_FOR(LSHL, lshl);
+            HANDLER_FOR(ISHR, ishr);
+            HANDLER_FOR(LSHR, lshr);
+            HANDLER_FOR(IUSHR, iushr);
+            HANDLER_FOR(LUSHR, lushr);
+            HANDLER_FOR(IAND, iand);
+            HANDLER_FOR(LAND, land);
+            HANDLER_FOR(IOR, ior);
+            HANDLER_FOR(LOR, lor);
+            HANDLER_FOR(IXOR, ixor);
+            HANDLER_FOR(LXOR, lxor);
+            HANDLER_FOR(IINC, iinc);
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
