@@ -14,7 +14,8 @@ jobs:
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential nasm
-
+      - name: Setup dependencies
+        run: ./scripts/init.sh
       - name: Build
         run: sudo make prod-all
 
@@ -29,7 +30,8 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: latest
-
+      - name: Setup dependencies
+        run: ./scripts/init.sh
       - name: Build
         run: sudo make prod-all TARGET=wasm
 
@@ -48,5 +50,5 @@ jobs:
 
       - name: Build with MSYS2 Make
         shell: msys2 {0}
-        run: sudo make prod-all TARGET=win32
+        run: ./scripts/init.sh && sudo make prod-all TARGET=win32
 
