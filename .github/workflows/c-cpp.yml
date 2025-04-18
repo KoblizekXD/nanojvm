@@ -1,21 +1,52 @@
-name: C/C++
+name: Build All Platforms
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build-linux:
+  linux:
+    name: Linux (GCC)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y nasm gcc g++
-    - name: Setup
-      run: ./scripts/init.sh
-    - name: Compile
-      run: make
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential nasm
+
+      - name: Build
+        run: sudo make prod-all
+
+  emcc:
+    name: Linux (Emscripten)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Build
+        run: sudo make prod-all TARGET=wasm
+
+  windows:
+    name: Windows (MSVC)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies (MSYS2)
+        uses: msys2/setup-msys2@v2
+        with:
+          install: base-devel mingw-w64-x86_64-gcc mingw-w64-x86_64-nasm
+          msystem: MINGW64
+
+      - name: Build with MSYS2 Make
+        shell: msys2 {0}
+        run: sudo make prod-all TARGET=win32
+
