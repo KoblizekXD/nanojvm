@@ -11,9 +11,12 @@
 #define OPTION_DISABLE_CLINIT (1 << 1)
 #define OPTION_DISABLE_INIT (1 << 2)
 
+struct jdk;
+
 typedef struct vm_options {
     size_t classpath_len;
     char **classpath;
+    struct jdk *jdk;
     uint8_t flags;
     size_t argc;
     char **argv;

@@ -1,3 +1,4 @@
+#include "miniz.h"
 #include <alloca.h>
 #include <ctype.h>
 #include <nanojvm.h>
@@ -19,6 +20,8 @@ void PrintHelp(void)
         "\t\tAppends a file or a directory to the runtime classpath. If file is passed, it needs to be one of: .class, .jar, .jmod. This option can be repeated.\n"
         "\t--no-jdk\n"
         "\t\tDisables default lookup JVM installation lookup.\n"
+        "\t--jdk <rt.jar>\n"
+        "\t\tSpecifies path to custom JDK runtime library.\n"
         "\t--no-clinit\n"
         "\t\tDon't run static initializers\n"
         "\t--no-init\n"
@@ -57,7 +60,8 @@ const VmOptions DEFAULT_OPTIONS = (VmOptions) {
     .classpath_len = 0,
     .flags = 0,
     .heap_init = DEFAULT_HEAP_INITIAL,
-    .heap_max = DEFAULT_HEAP_MAX
+    .heap_max = DEFAULT_HEAP_MAX,
+    .jdk = NULL
 };
 
 size_t unit_parser(const char *str)
@@ -156,6 +160,19 @@ VmOptions *Parse(int argc, char **argv)
             opts.flags |= OPTION_DISABLE_CLINIT;
         } else if (StringEquals(str, "--no-init")) {
             opts.flags |= OPTION_DISABLE_INIT;
+        } else if (StringEquals(str, "--jdk")) {
+            CheckNext;
+            i++;
+            opts.jdk = malloc(sizeof(JDK));
+            opts.jdk->mode = 8;
+            opts.jdk->path = argv[i];
+            mz_zip_archive *zip = calloc(1, sizeof(mz_zip_archive));
+            if (!mz_zip_reader_init_file(zip, argv[i], 0)) {
+                free(zip);
+                error("Target JDK runtime is not a valid zip format");
+                exit(1);
+            }
+            opts.jdk->handle = zip;
         } else {
             error("Unrecognized option: %s", str);
             FreeOptionsIfPossible(&opts);

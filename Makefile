@@ -62,7 +62,7 @@ INCLUDES := -I$(SRC_DIR) -I$(LIB_DIR)/miniz -I$(LIB_DIR)/classparse/src/
 # Common flags
 CFLAGS_C11 := -std=c11
 CXXFLAGS_CXX11 := -std=c++11
-WARNINGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter
+WARNINGS := -Wall -Wextra -Wno-unused-parameter
 
 # Dev flags
 DEV_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -g -O0 -fsanitize=address,undefined \

@@ -39,8 +39,7 @@ typedef struct virtual_machine {
     VmOptions *options;
     size_t loaded_classes_count;
     ClassFile **loaded_classes;
-    Heap *heap;
-    JDK *jdk;
+    Heap *heap; 
     size_t thread_count;
     Thread *threads;
     size_t natives_count;

@@ -25,9 +25,6 @@ VirtualMachine *Initialize(VmOptions *options)
     vm->loaded_classes_count = 0;
     vm->loaded_classes = NULL;
     vm->heap = InitializeHeap(options->heap_init);
-    if (!(vm->options->flags & OPTION_DISABLE_JVM_LOOKUP))
-        vm->jdk = SetupJDK();
-    else vm->jdk = NULL;
     vm->thread_count = 1;
     vm->threads = malloc(sizeof(Thread));
     vm->threads->native_thread = thrd_current();
@@ -35,6 +32,8 @@ VirtualMachine *Initialize(VmOptions *options)
     vm->threads->frame_count = 0;
     vm->string_count = 0;
     vm->string_pool = NULL;
+    if (!vm->options->jdk && !(vm->options->flags & OPTION_DISABLE_JVM_LOOKUP))
+        vm->options->jdk = SetupJDK();
     return vm;
 }
 
@@ -52,10 +51,10 @@ void TearDown(VirtualMachine *vm)
         FreeClassFile(vm->loaded_classes[i]);
     }
     free(vm->loaded_classes);
-    if (vm->jdk) {
-        mz_zip_reader_end(vm->jdk->handle);
-        free(vm->jdk->handle);
-        free(vm->jdk);
+    if (vm->options->jdk) {
+        mz_zip_reader_end(vm->options->jdk->handle);
+        free(vm->options->jdk->handle);
+        free(vm->options->jdk);
     }
     for (size_t i = 0; i < vm->thread_count; i++) {
         for (size_t j = 0; j < vm->threads[i].frame_count; j++) {
@@ -174,7 +173,7 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
         }
     }
     ClassFile *cf = NULL;
-    if (vm->jdk && vm->jdk->mode != 0) cf = find_classfile_zip(vm->jdk->handle, name);
+    if (vm->options->jdk && vm->options->jdk->mode != 0) cf = find_classfile_zip(vm->options->jdk->handle, name);
     for (size_t i = 0; i < vm->options->classpath_len; i++) {
         const char *str = vm->options->classpath[i];
         if (EndsWith(str, ".class")) {
@@ -196,7 +195,7 @@ ClassFile *FindClass(VirtualMachine *vm, const char *name)
     }
 
     if (cf == NULL) {
-        error("ClassNotFound: %s", name);
+        ThrowException(vm, "java/lang/ClassNotFoundException", "Target class %s was not found in runtime classpath", name);
         return NULL;
     }
     vm->loaded_classes_count++;
