@@ -1,108 +1,181 @@
-# ===== Project Configuration =====
-PROJECT_NAME := nanojvm
-SRC_DIR := src
-BUILD_DIR := build
-BIN_DIR := bin
-LIB_DIR := lib
+# Root Makefile
 
-# ===== Toolchain Configuration =====
-CC := gcc
-CXX := g++
-ASM := nasm
-LINKER := gcc
-
-# ===== Build Mode Configuration =====
-# Available modes: dev, prod
-BUILD_MODE ?= dev
-
-# ===== Source File Detection =====
-C_SRCS := $(shell find $(SRC_DIR) -name '*.c')
-C_SRCS += $(LIB_DIR)/miniz/miniz.c
-CPP_SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
-ASM_SRCS := $(shell find $(SRC_DIR) -name '*.asm')
-
-# ===== Object/Dependency Files =====
-C_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(filter $(SRC_DIR)/%,$(C_SRCS:.c=.o))) \
-		$(patsubst $(LIB_DIR)/%,$(BUILD_DIR)/lib/%,$(filter $(LIB_DIR)/%,$(C_SRCS:.c=.o)))
-CPP_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(CPP_SRCS:.cpp=.o))
-ASM_OBJS := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(ASM_SRCS:.asm=.o))
-OBJS := $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS)
-DEPS := $(OBJS:.o=.d)
-
-# ===== Compiler Flags =====
-COMMON_FLAGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter -I$(SRC_DIR) -I$(LIB_DIR)/classparse/src/ -I$(LIB_DIR)/miniz/ -MMD -MP
-COMMON_LD_FLAGS := -L $(LIB_DIR)/classparse/bin/ -rdynamic -lclassparse -lm -pthread
-
-ifeq ($(BUILD_MODE),prod)
-    OPT_FLAGS := -O3 -flto -DNDEBUG
-    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=gnu11
-    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++11
-    ASMFLAGS := -f elf64
-    LDFLAGS := $(OPT_FLAGS) $(COMMON_LD_FLAGS)
+# Determine default target platform
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    DEFAULT_TARGET = linux
+else ifeq ($(UNAME_S),Windows_NT)
+    DEFAULT_TARGET = win32
 else
-    OPT_FLAGS := -O0 -g3 -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
-    CFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=gnu11
-    CXXFLAGS := $(COMMON_FLAGS) $(OPT_FLAGS) -std=c++11
-    ASMFLAGS := -f elf64 -g -F dwarf
-    LDFLAGS := $(OPT_FLAGS) $(COMMON_LD_FLAGS)
+    DEFAULT_TARGET = linux
 endif
 
-# ===== Targets Configuration =====
-TARGET := $(BIN_DIR)/$(PROJECT_NAME)
+# Configuration
+TARGET ?= $(DEFAULT_TARGET)
+BUILD_DIR = build
+BIN_DIR = bin
+SRC_DIR = src
+LIB_DIR = lib
 
-TARGET_WIN32 := $(BIN_DIR)/$(PROJECT_NAME).exe
-TARGET_WASM := $(BIN_DIR)/$(PROJECT_NAME).wasm
+# Toolchain configuration based on target
+ifeq ($(TARGET),wasm)
+    CC = emcc
+    CXX = em++
+    AS = nasm
+    LD = emcc
+    EXT = .wasm
+else ifeq ($(TARGET),win32)
+    CC = x86_64-w64-mingw32-gcc
+    CXX = x86_64-w64-mingw32-g++
+    AS = nasm
+    LD = x86_64-w64-mingw32-g++
+    EXT = .exe
+else
+    # Linux/default
+    CC = gcc
+    CXX = g++
+    AS = nasm
+    LD = g++
+    EXT =
+endif
 
-# ===== Build Rules =====
-all: $(TARGET)
+SRC_C       := $(shell find $(SRC_DIR) -name '*.c')
+SRC_CPP     := $(shell find $(SRC_DIR) -name '*.cpp')
+SRC_ASM     := $(shell find $(SRC_DIR) -name '*.asm')
+MINIZ_C     := $(wildcard $(LIB_DIR)/miniz/*.c)
+MINIZ_CPP   := $(wildcard $(LIB_DIR)/miniz/*.cpp)
 
-$(TARGET): $(OBJS) | $(BIN_DIR)
-	$(LINKER) $^ -o $@ $(LDFLAGS)
+define TO_OBJ
+$(addprefix $(BUILD_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.asm,%.o,$(1)))))
+endef
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
-	@mkdir -p "$$(dirname $@)"
-	$(CC) $(CFLAGS) -c $< -o $@
+OBJS := \
+  $(call TO_OBJ,$(SRC_C)) \
+  $(call TO_OBJ,$(SRC_CPP)) \
+  $(call TO_OBJ,$(SRC_ASM)) \
+  $(call TO_OBJ,$(MINIZ_C)) \
+  $(call TO_OBJ,$(MINIZ_CPP))
 
-$(BUILD_DIR)/$(LIB_DIR)/miniz/miniz.o: $(LIB_DIR)/miniz/miniz.c
-	mkdir -p "$$(dirname $@)"
-	$(CC) $(CFLAGS) -c $< -o $@
+# Include directories
+INCLUDES := -I$(SRC_DIR) -I$(LIB_DIR)/miniz -I$(LIB_DIR)/classparse/src/
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
-	@mkdir -p "$$(dirname $@)"
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Common flags
+CFLAGS_C11 := -std=c11
+CXXFLAGS_CXX11 := -std=c++11
+WARNINGS := -Wall -Wextra -Wpedantic -Wno-unused-parameter
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm | $(BUILD_DIR)
-	@mkdir -p "$$(dirname $@)"
-	$(ASM) $(ASMFLAGS) $< -o $@
+# Dev flags
+DEV_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -g -O0 -fsanitize=address,undefined \
+              -fno-omit-frame-pointer -fstack-protector-strong -DDEBUG
+DEV_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -g -O0 -fsanitize=address,undefined \
+                -fno-omit-frame-pointer -fstack-protector-strong -DDEBUG
+DEV_ASFLAGS := -f elf64 -g -F dwarf
+DEV_LDFLAGS := -fsanitize=address,undefined -rdynamic -pthread -lm -lclassparse \
+               -L$(LIB_DIR)/classparse/bin
 
-$(BUILD_DIR) $(BIN_DIR):
+# Prod flags
+PROD_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-pointer \
+               -march=native -fno-stack-protector
+PROD_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-pointer \
+                 -march=native -fno-stack-protector
+PROD_ASFLAGS := -f elf64
+PROD_LDFLAGS := -flto -s -pthread -lm -lclassparse -L$(LIB_DIR)/classparse/bin
+
+# Dependency generation
+DEPFLAGS = -MT $@ -MMD -MP -MF $(BUILD_DIR)/$*.d
+
+# Final executable name
+EXEC = $(BIN_DIR)/nanojvm$(EXT)
+
+# Phony targets
+.PHONY: all dev prod dev-all prod-all clean clean-all
+
+# Dev build
+dev: CFLAGS = $(DEV_CFLAGS)
+dev: CXXFLAGS = $(DEV_CXXFLAGS)
+dev: ASFLAGS = $(DEV_ASFLAGS)
+dev: LDFLAGS = $(DEV_LDFLAGS)
+dev: $(EXEC)
+
+all: prod-all
+
+# Prod build
+prod: CFLAGS = $(PROD_CFLAGS)
+prod: CXXFLAGS = $(PROD_CXXFLAGS)
+prod: ASFLAGS = $(PROD_ASFLAGS)
+prod: LDFLAGS = $(PROD_LDFLAGS)
+prod: $(EXEC)
+
+dev-all:
+	$(MAKE) -C $(LIB_DIR)/classparse dev TARGET=$(TARGET)
+	sudo $(MAKE) -C $(LIB_DIR)/classparse install
+	$(MAKE) -C std
+	$(MAKE) dev
+
+prod-all:
+	$(MAKE) -C $(LIB_DIR)/classparse prod TARGET=$(TARGET)
+	sudo $(MAKE) -C $(LIB_DIR)/classparse install
+	$(MAKE) -C std
+	$(MAKE) prod
+
+# Link rule
+$(EXEC): $(OBJS) | $(BIN_DIR)
+	$(LD) $^ -o $@ $(LDFLAGS)
+
+# Compilation rules
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEPFLAGS) -c $< -o $@
+
+# Generic C++ file rule
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(DEPFLAGS) -c $< -o $@
+
+# Generic ASM file rule
+$(BUILD_DIR)/%.o: %.asm
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) $< -o $@
+
+$(BUILD_DIR)/miniz/%.o: $(LIB_DIR)/miniz/%.c | $(BUILD_DIR)/miniz
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEPFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/miniz/%.o: $(LIB_DIR)/miniz/%.cpp | $(BUILD_DIR)/miniz
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(DEPFLAGS) -c $< -o $@
+
+# Create directories
+$(BIN_DIR):
 	mkdir -p $@
 
--include $(DEPS)
+$(BUILD_DIR):
+	mkdir -p $@
+	mkdir -p $(BUILD_DIR)/miniz
 
-# ===== Utility Targets =====
-.PHONY: clean rebuild run debug
+$(BUILD_DIR)/miniz:
+	mkdir -p $@
 
+# Clean
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-rebuild: clean all
+clean-all: clean
+	$(MAKE) -C $(LIB_DIR)/classparse clean
+	$(MAKE) -C std clean
 
-run: all
-	./$(TARGET)
+# Include dependencies
+-include $(OBJS:.o=.d)
 
-debug: all
-	gdb $(TARGET)
-
-# ===== Additional Targets (Extensible) =====
-win32: CC := x86_64-w64-mingw32-gcc
-win32: CXX := x86_64-w64-mingw32-g++
-win32: LINKER := x86_64-w64-mingw32-g++
-win32: TARGET := $(TARGET_WIN32)
-win32: all
-
-wasm: CC := emcc
-wasm: CXX := em++
-wasm: LINKER := em++
-wasm: TARGET := $(TARGET_WASM)
-wasm: all
+# Print help
+help:
+	@echo "Available targets:"
+	@echo "  dev        - Build development version (debug symbols, sanitizers)"
+	@echo "  prod       - Build production version (optimized, no debug)"
+	@echo "  dev-all    - Build all projects in development mode"
+	@echo "  prod-all   - Build all projects in production mode"
+	@echo "  clean      - Clean build and bin directories"
+	@echo "  clean-all  - Clean all projects"
+	@echo ""
+	@echo "Variables:"
+	@echo "  TARGET     - Target platform (wasm, linux, win32), default: $(DEFAULT_TARGET)"

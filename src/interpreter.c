@@ -1282,6 +1282,17 @@ INSTRUCTION(invokespecial)
         InvokeMethod(vm, GetMethodByNameAndDescriptor(FindClass(vm, *ref.class_info->name), *ref.name_and_type->name, *ref.name_and_type->descriptor));
 }
 
+INSTRUCTION(invoke_normal_method)
+{
+    uint16_t index = Read16();
+    MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
+    Method *m = GetMethodByNameAndDescriptor(FindClass(vm, *ref.class_info->name), *ref.name_and_type->name, *ref.name_and_type->descriptor);
+    Item *res = InvokeMethod(vm, m);
+    if (GetReturnType(m) != 'V' && res == NULL) {
+        warn("NULL was returned from non-void method!");
+    } else PushStack(opstack, res);
+}
+
 /**
  * Internal bytecode executor. Will process instructions and
  * invoke actions for them accordingly.
@@ -1498,6 +1509,10 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
             HANDLER_FOR(GETFIELD, getfield);
             HANDLER_FOR(PUTFIELD, putfield);
             HANDLER_FOR(INVOKESPECIAL, invokespecial);
+            case INVOKEVIRTUAL:
+            case INVOKESTATIC:
+                handler_invoke_normal_method(PASS_PARAMS);
+                break;
             default:
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
