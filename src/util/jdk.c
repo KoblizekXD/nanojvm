@@ -1,6 +1,9 @@
 #include <nanojvm.h>
 #include <stdlib.h>
 #include <util/logging.h>
+
+#ifndef DISABLE_MINIZ
+
 #include <miniz.h>
 
 mz_zip_archive *attempt_java11(const char *home)
@@ -18,6 +21,11 @@ mz_zip_archive *attempt_java11(const char *home)
         free(mod_path);
         return zip;
     }
+}
+
+extern void CloseArchiveHandle(void *handle)
+{
+    mz_zip_reader_end(handle);
 }
 
 mz_zip_archive *attempt_java_leg(const char *home)
@@ -59,3 +67,17 @@ JDK *SetupJDK(void)
     debug("Using %s", jdk->path);
     return jdk;
 }
+
+#else
+
+#warning "Disabling JDK support may remove support for native JDK loader"
+
+JDK *SetupJDK(void)
+{
+    return NULL;
+}
+
+extern void CloseArchiveHandle(void *handle)
+{}
+
+#endif

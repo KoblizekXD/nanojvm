@@ -44,7 +44,7 @@ ObjectRegion *Instantiate(VirtualMachine *vm, ClassFile *cf)
         region->cf = cf;
         region->metadata |= HEAP_TYPE_0 | HEAP_TYPE_1;
     }
-;
+
     return region;
 }
 

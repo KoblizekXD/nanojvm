@@ -1,4 +1,4 @@
-#include "objects.h"
+#include <objects.h>
 #include <mem/exstack.h>
 #include <mem/memutils.h>
 #include <stddef.h>
@@ -11,9 +11,12 @@
 #include <nanojvm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <miniz.h>
 #include <string.h>
 #include <vmopts.h>
+
+#ifndef DISABLE_MINIZ
+#include <miniz.h>
+#endif
 
 VirtualMachine *Initialize(VmOptions *options)
 {
@@ -37,6 +40,8 @@ VirtualMachine *Initialize(VmOptions *options)
     return vm;
 }
 
+extern void CloseArchiveHandle(void *handle);
+
 void TearDown(VirtualMachine *vm)
 {
     MemoryInformation info = GetMemoryState();
@@ -52,7 +57,7 @@ void TearDown(VirtualMachine *vm)
     }
     free(vm->loaded_classes);
     if (vm->options->jdk) {
-        mz_zip_reader_end(vm->options->jdk->handle);
+        CloseArchiveHandle(vm->options->jdk->handle);
         free(vm->options->jdk->handle);
         free(vm->options->jdk);
     }
@@ -65,6 +70,8 @@ void TearDown(VirtualMachine *vm)
     }
     free(vm->threads);
 }
+
+#ifndef DISABLE_MINIZ
 
 ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
 {
@@ -99,6 +106,16 @@ ClassFile *find_classfile_zip(mz_zip_archive *archive, const char *classname)
     free(combined);
     return NULL;
 }
+
+#else
+
+ClassFile *find_classfile_zip(void *archive, const char *classname)
+{
+    warn("Attempting to load %s from undefined archive(is miniz disabled?)", classname);
+    return NULL;
+}
+
+#endif
 
 void link_class(VirtualMachine *vm, ClassFile *cf)
 {

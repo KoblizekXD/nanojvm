@@ -42,8 +42,6 @@ endif
 SRC_C       := $(shell find $(SRC_DIR) -name '*.c')
 SRC_CPP     := $(shell find $(SRC_DIR) -name '*.cpp')
 SRC_ASM     := $(shell find $(SRC_DIR) -name '*.asm')
-MINIZ_C     := $(wildcard $(LIB_DIR)/miniz/*.c)
-MINIZ_CPP   := $(wildcard $(LIB_DIR)/miniz/*.cpp)
 
 define TO_OBJ
 $(addprefix $(BUILD_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.asm,%.o,$(1)))))
@@ -53,8 +51,12 @@ OBJS := \
   $(call TO_OBJ,$(SRC_C)) \
   $(call TO_OBJ,$(SRC_CPP)) \
   $(call TO_OBJ,$(SRC_ASM)) \
-  $(call TO_OBJ,$(MINIZ_C)) \
-  $(call TO_OBJ,$(MINIZ_CPP))
+
+ifndef DISABLE_MINIZ
+	MINIZ_C     := $(wildcard $(LIB_DIR)/miniz/*.c)
+	MINIZ_CPP   := $(wildcard $(LIB_DIR)/miniz/*.cpp)
+	OBJS += $(call TO_OBJ,$(MINIZ_C)) $(call TO_OBJ,$(MINIZ_CPP))
+endif
 
 # Include directories
 INCLUDES := -I$(SRC_DIR) -I$(LIB_DIR)/miniz -I$(LIB_DIR)/classparse/src/
@@ -65,12 +67,12 @@ CXXFLAGS_CXX11 := -std=c++11
 WARNINGS := -Wall -Wextra -Wno-unused-parameter
 
 # Dev flags
-DEV_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -g -O0 -fsanitize=address,undefined \
+DEV_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -pg -g -O0 -fsanitize=address,undefined \
               -fno-omit-frame-pointer -fstack-protector-strong -DDEBUG
-DEV_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -g -O0 -fsanitize=address,undefined \
+DEV_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -pg -g -O0 -fsanitize=address,undefined \
                 -fno-omit-frame-pointer -fstack-protector-strong -DDEBUG
 DEV_ASFLAGS := -f elf64 -g -F dwarf
-DEV_LDFLAGS := -fsanitize=address,undefined -rdynamic -pthread -lm -lclassparse \
+DEV_LDFLAGS := -fsanitize=address,undefined -pg -rdynamic -pthread -lm -lclassparse \
                -L$(LIB_DIR)/classparse/bin
 
 # Prod flags
@@ -80,6 +82,13 @@ PROD_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-p
                  -march=native -fno-stack-protector
 PROD_ASFLAGS := -f elf64
 PROD_LDFLAGS := -flto -s -pthread -lm -lclassparse -L$(LIB_DIR)/classparse/bin
+
+ifdef DISABLE_MINIZ
+	PROD_CFLAGS += -DDISABLE_MINIZ
+	PROD_CXXFLAGS += -DDISABLE_MINIZ
+	DEV_CFLAGS += -DDISABLE_MINIZ
+	DEV_CXXFLAGS += -DDISABLE_MINIZ
+endif
 
 # Dependency generation
 DEPFLAGS = -MT $@ -MMD -MP -MF $(BUILD_DIR)/$*.d

@@ -1,4 +1,3 @@
-#include "miniz.h"
 #include <alloca.h>
 #include <ctype.h>
 #include <nanojvm.h>
@@ -52,6 +51,10 @@ void PrintVersionInformation(void)
 #endif
     printf("NanoJVM version %s\nBuilt at: %s %s for %s-%d-bit\nLicensed under MIT license.\n", NANOJVM_REVISION, __DATE__, __TIME__, platform, (int)(8 * sizeof(void*)));
 }
+
+#ifndef DISABLE_MINIZ
+#include <miniz.h>
+#endif
 
 const VmOptions DEFAULT_OPTIONS = (VmOptions) {
     .argc = 0,
@@ -163,6 +166,7 @@ VmOptions *Parse(int argc, char **argv)
         } else if (StringEquals(str, "--jdk")) {
             CheckNext;
             i++;
+#ifndef DISABLE_MINIZ
             opts.jdk = malloc(sizeof(JDK));
             opts.jdk->mode = 8;
             opts.jdk->path = argv[i];
@@ -173,6 +177,9 @@ VmOptions *Parse(int argc, char **argv)
                 exit(1);
             }
             opts.jdk->handle = zip;
+#else
+            warn("Passing JDK installation path is not available without miniz");
+#endif
         } else {
             error("Unrecognized option: %s", str);
             FreeOptionsIfPossible(&opts);

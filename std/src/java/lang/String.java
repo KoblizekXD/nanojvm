@@ -23,4 +23,11 @@ public class String {
         }
         return bytes;
     }
+    
+    public static native String valueOf(int value);
+    public static native String valueOf(long value);
+    public static native String valueOf(float value);
+    public static native String valueOf(double value);
+    public static native String valueOf(boolean value);
+    public static native String valueOf(char value);
 }

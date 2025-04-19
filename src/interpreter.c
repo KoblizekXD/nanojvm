@@ -1277,8 +1277,8 @@ INSTRUCTION(invokespecial)
 {
     uint16_t index = Read16();
     MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
-    if ((StringEquals(frame->method->name, "<init>") && vm->options->flags & OPTION_DISABLE_INIT)
-        || ((StringEquals(frame->method->name, "<clinit>") && vm->options->flags & OPTION_DISABLE_CLINIT)))
+    if ((StringEquals(*ref.name_and_type->name, "<init>") && !(vm->options->flags & OPTION_DISABLE_INIT))
+        || ((StringEquals(*ref.name_and_type->name, "<clinit>") && !(vm->options->flags & OPTION_DISABLE_CLINIT))))
         InvokeMethod(vm, GetMethodByNameAndDescriptor(FindClass(vm, *ref.class_info->name), *ref.name_and_type->name, *ref.name_and_type->descriptor));
 }
 
@@ -1287,10 +1287,7 @@ INSTRUCTION(invoke_normal_method)
     uint16_t index = Read16();
     MemberRef ref = frame->method->cf->constant_pool[index - 1].info.member_ref;
     Method *m = GetMethodByNameAndDescriptor(FindClass(vm, *ref.class_info->name), *ref.name_and_type->name, *ref.name_and_type->descriptor);
-    Item *res = InvokeMethod(vm, m);
-    if (GetReturnType(m) != 'V' && res == NULL) {
-        warn("NULL was returned from non-void method!");
-    } else PushStack(opstack, res);
+    InvokeMethod(vm, m);
 }
 
 /**
@@ -1517,6 +1514,7 @@ Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack,
                 ThrowException(vm, "java/lang/InternalError", "Unresolved instruction: %s - 0x%X", GetInstructionName(opcode), opcode);
                 break;
         }
+        frame = &FrameCeiling(GetCurrent(vm));
     }
 
     return NULL;

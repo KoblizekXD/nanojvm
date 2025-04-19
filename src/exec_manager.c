@@ -24,18 +24,16 @@ ThreadFrame *push_frame(VirtualMachine *vm, Method *method, ExStack *lvars, ExSt
     return &t->frames[t->frame_count - 1];
 }
 
-ThreadFrame* pop_frame(VirtualMachine *vm, Item *to_push) 
+void pop_frame(VirtualMachine *vm, Item *to_push) 
 {
     Thread *t = GetCurrent(vm);
 
     if (t == NULL) {
         error("Cannot pop frame: Current thread is not registered in VM");
-        return NULL;
     }
 
     if (t->frame_count == 0) {
         error("Cannot pop frame: Stack underflow (no frames left)");
-        return NULL;
     }
 
     ThreadFrame *popped_frame = &t->frames[t->frame_count - 1];
@@ -43,6 +41,7 @@ ThreadFrame* pop_frame(VirtualMachine *vm, Item *to_push)
     t->frame_count--;
     DestroyStack(popped_frame->locals);
     DestroyStack(popped_frame->opstack);
+    free(popped_frame);
 
     if (t->frame_count == 0) {
         free(t->frames);
@@ -56,8 +55,6 @@ ThreadFrame* pop_frame(VirtualMachine *vm, Item *to_push)
             warn("pop_frame: realloc failed (leaking memory)");
         }
     }
-
-    return popped_frame;
 }
 
 extern Item *execute_internal(VirtualMachine *vm, ThreadFrame *frame, ExStack *opstack, ExStack *lvars);
