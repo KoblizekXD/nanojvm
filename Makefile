@@ -12,6 +12,7 @@ endif
 
 # Configuration
 TARGET ?= $(DEFAULT_TARGET)
+FREESTANDING ?= 0
 BUILD_DIR = build
 BIN_DIR = bin
 SRC_DIR = src
@@ -117,7 +118,9 @@ prod: $(EXEC)
 
 dev-all:
 	$(MAKE) -C $(LIB_DIR)/classparse dev TARGET=$(TARGET)
+ifeq($(FREESTANDING), 1)
 	sudo $(MAKE) -C $(LIB_DIR)/classparse install
+endif
 	$(MAKE) -C std
 	$(MAKE) dev
 
