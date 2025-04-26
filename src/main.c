@@ -1,3 +1,5 @@
+#ifndef __freestanding__
+
 #include <classparse.h>
 #include <stdlib.h>
 #include <util/logging.h>
@@ -40,3 +42,14 @@ int main(int argc, char **argv)
     // TearDown(vm);
     return 0;
 }
+
+#else
+
+#warn "Building NanoJVM in freestanding model, as an app, this is not supported. Please set BUILD_AS_LIB=1"
+
+int main(int argc, char *argv[])
+{
+    return 1;
+}
+
+#endif

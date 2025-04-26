@@ -8,6 +8,8 @@
 
 #define LOG_STATEMENT_ALLOC_FAILED "Failure in memory allocation: "
 
+#ifndef __freestanding__
+
 #ifdef DEBUG
 #include <string.h>
 
@@ -26,6 +28,15 @@ void log_message(int status, const char *format, ...);
 #define warn(message, ...) log_message(LOG_STATUS_WARN, message, ##__VA_ARGS__)
 #define error(message, ...) log_message(LOG_STATUS_ERROR, message, ##__VA_ARGS__)
 #define debug(message, ...)
+#endif
+
+#else
+
+#define info(message, ...)
+#define warn(message, ...)
+#define error(message, ...)
+#define debug(message, ...)
+
 #endif
 
 #endif

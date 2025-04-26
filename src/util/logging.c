@@ -1,8 +1,9 @@
 #include <util/logging.h>
+
+#if defined(DEBUG) && !defined(__freestanding__)
+
 #include <stdarg.h>
 #include <stdio.h>
-
-#ifdef DEBUG
 
 void log_message(int status, const char *file, int line, const char *format, ...)
 {
@@ -16,7 +17,7 @@ void log_message(int status, const char *file, int line, const char *format, ...
     printf("\033[0m\n");
 }
 
-#else
+#elif !defined(DEBUG) && !defined(__freestanding__)
 
 void log_message(int status, const char *format, ...)
 {
