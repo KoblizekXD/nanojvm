@@ -1,5 +1,6 @@
-#if defined(__linux__) || defined(__APPLE__)
+#if (defined(__linux__) || defined(__APPLE__)) && !defined(__freestanding__)
 
+#include <stdlib.h>
 #include <platform/natives.h>
 #include <mem/memutils.h>
 #include <util/logging.h>
@@ -56,6 +57,11 @@ MemoryInformation GetMemoryState(void)
     }
     
     return info;
+}
+
+void *RequestSystemResources(size_t count)
+{
+    return malloc(count);
 }
 
 #endif
