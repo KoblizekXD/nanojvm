@@ -1,6 +1,7 @@
-#ifndef NANOJVM_MEM_HEAP_H
-#define NANOJVM_MEM_HEAP_H
+#ifndef NANOJVM_MEMORY_HEAP_H
+#define NANOJVM_MEMORY_HEAP_H
 
+#include <nanojvm.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -25,14 +26,11 @@ typedef struct heap {
     size_t size;
     HeapRegion *allocated;
     HeapRegion *free;
-    void *raw;
-} Heap;
+    uint8_t raw[];
+} __attribute__((packed)) Heap;
 
-Heap *InitializeHeap(size_t size);
-HeapRegion *Allocate(Heap *heap, size_t size);
-void Free(Heap *heap, HeapRegion *region);
-void HeapMap(Heap *heap);
-void FreeHeap(Heap *heap);
-void ExpandHeap(Heap *heap, size_t new_size);
+void InitializeHeap(FreestandingVirtualMachine *vm);
+HeapRegion *Allocate(FreestandingVirtualMachine *vm, size_t size);
+void Free(FreestandingVirtualMachine *vm, HeapRegion *region);
 
 #endif
