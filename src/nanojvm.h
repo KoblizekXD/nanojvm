@@ -69,4 +69,58 @@ ClassFile *FindClass(FreestandingVirtualMachine *vm, const char *name);
 ClassFile *LoadClass(FreestandingVirtualMachine *vm, void *ptr);
 ThreadFrame *GetTopFrame(Thread *thr);
 
+typedef struct heap_region HeapRegion;
+
+// ObjectRegion for storing object data
+typedef struct object_region {
+    uint8_t metadata;
+    size_t size;
+    HeapRegion *next;
+    ClassFile *cf;
+    uint8_t data[];
+} __attribute__((packed)) ObjectRegion;
+
+// Struct representing byte, char, boolean, short, int and long primitive arrays.
+typedef struct primitive_array_region {
+    uint8_t metadata;
+    size_t size;
+    HeapRegion *next;
+    uint8_t data[];
+} __attribute__((packed)) PrimitiveArrayRegion;
+
+// Structure representing arrays of Object arrays. Shares the same structure as ObjectRegion, but is managed differently.
+typedef ObjectRegion ObjectArrayRegion;
+
+/**
+ * Create a new instance of a given class. The region is allocated in the heap memory of the virtual machine.
+ */
+ObjectRegion *Instantiate(FreestandingVirtualMachine *vm, ClassFile *cf);
+
+/**
+ * Create a new instance of an array of given length. The array will be allocated in heap memory of the virtual machine. 
+ */
+PrimitiveArrayRegion *InstantiateArray(FreestandingVirtualMachine *vm, uint8_t flags, size_t length);
+
+/**
+ * Create a new instance of an array of objects of given class. The array will be allocated in heap memory of the VM.
+ */
+ObjectArrayRegion *InstantiateObjectArray(FreestandingVirtualMachine *vm, ClassFile *cf, size_t length);
+
+/**
+ * Sets a value in the array at given index. The size of the value will be computed automatically and copied from the
+ * provided pointer. The function accepts both PrimitiveArrayRegion and ObjectArrayRegion. Passing anything else will result in returning 0.
+ * Otherwise returns 1.
+ */
+int SetArrayValue(HeapRegion *instance, size_t index, void *from);
+
+/**
+ * Returns a size of a 1 array element. It will be either 8, 4, 2 or 1.
+ */
+size_t GetArrayElementSize(HeapRegion *region);
+
+/**
+ * Returns a length of given array in heap memory.
+ */
+size_t GetArrayLength(HeapRegion *reg);
+
 #endif // NANOJVM_H

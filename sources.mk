@@ -42,7 +42,7 @@ OBJS := \
   $(call TO_OBJ,$(SRC_CPP)) \
   $(call TO_OBJ,$(SRC_ASM)) \
 
-INCLUDES := -I$(SRC_DIR) -I$(LIB_DIR)/miniz -I$(LIB_DIR)/classparse/src/
+INCLUDES := -I$(SRC_DIR) -I$(LIB_DIR)/classparse/src/
 
 CFLAGS_C11 := -std=c11
 CXXFLAGS_CXX11 := -std=c++11
@@ -55,11 +55,16 @@ DEV_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -pg -g -O0 -fsanitize=address,unde
                 -fno-omit-frame-pointer -fstack-protector-strong -DDEBUG
 DEV_ASFLAGS := -f elf64 -g -F dwarf
 
-# Prod flags
-PROD_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-pointer \
-               -march=native -fno-stack-protector
-PROD_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-pointer \
-                 -march=native -fno-stack-protector
+PROD_CFLAGS := $(CFLAGS_C11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-pointer -fno-stack-protector
+PROD_CXXFLAGS := $(CXXFLAGS_CXX11) $(WARNINGS) -O3 -flto -DNDEBUG -fomit-frame-pointer -fno-stack-protector
+PROD_ASFLAGS := -f elf64
+
+ifeq ($(TARGET),wasm)
+else
+    PROD_CFLAGS += -march=native
+    PROD_CXXFLAGS += -march=native
+endif
+
 PROD_ASFLAGS := -f elf64
 
 dev: CFLAGS = $(DEV_CFLAGS)
