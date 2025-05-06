@@ -12,6 +12,7 @@
 #define ERRNO_HEAP_INIT_FAILURE 0x2
 #define ERRNO_HEAP_SEGMENT_TOO_SMALL 0x3
 #define ERRNO_HEAP_OOM 0x4
+#define ERRNO_CF_OOM 0x5
 
 typedef struct cached_string {
     uint64_t hash;
@@ -21,8 +22,9 @@ typedef struct cached_string {
 typedef struct thread_frame {
     uint8_t *pc;
     Method *method;
-    size_t local_size;
-    size_t opstack_size;
+    uint16_t local_size;
+    uint16_t opstack_size;
+    uint16_t opstack_top;
     uint8_t data[]; // First contains (4 * local_size) bytes for local variables, then (4 * opstack_size) bytes for operand stack.
 } __attribute__((packed)) ThreadFrame;
 
@@ -37,6 +39,9 @@ typedef struct virtual_machine {
     size_t string_pool_count;
     size_t string_pool_size;
     CachedString *strings;
+    size_t cf_count;
+    size_t cf_pool_size;
+    void *cf_table; // || uint32_t | ClassFile || ...
     Heap *heap;
     size_t thread_count;
     size_t thread_pool_size;
@@ -57,5 +62,11 @@ FreestandingVirtualMachine InitializeEx(
     void *thread_data, size_t thread_data_size,
     void *classfile_pool, size_t classfile_pool_size
 );
+
+int Execute(FreestandingVirtualMachine *vm, Thread *thr, Method *method);
+int ExecuteBytecodeInternal(FreestandingVirtualMachine *vm, Thread *thread, ThreadFrame *frame);
+ClassFile *FindClass(FreestandingVirtualMachine *vm, const char *name);
+ClassFile *LoadClass(FreestandingVirtualMachine *vm, void *ptr);
+ThreadFrame *GetTopFrame(Thread *thr);
 
 #endif // NANOJVM_H
