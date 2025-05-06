@@ -7,13 +7,12 @@ else
     DEFAULT_TARGET = linux
 endif
 
-# Configuration
 TARGET ?= $(DEFAULT_TARGET)
 BUILD_DIR = build
 SRC_DIR = src
 LIB_DIR = lib
+FREESTANDING ?= 0
 
-# Toolchain configuration based on target
 ifeq ($(TARGET),wasm)
     CC = emcc
     CXX = em++
@@ -67,14 +66,20 @@ endif
 
 PROD_ASFLAGS := -f elf64
 
-dev: CFLAGS = $(DEV_CFLAGS)
-dev: CXXFLAGS = $(DEV_CXXFLAGS)
-dev: ASFLAGS = $(DEV_ASFLAGS)
-dev: $(OBJS)
+ifeq ($(FREESTANDING), 1)
+	CFLAGS += -ffreestanding
+	CXXFLAGS += -ffreestanding
+endif
 
-prod: CFLAGS = $(PROD_CFLAGS)
-prod: CXXFLAGS = $(PROD_CXXFLAGS)
-prod: ASFLAGS = $(PROD_ASFLAGS)
+dev: CFLAGS += $(DEV_CFLAGS)
+dev: CXXFLAGS += $(DEV_CXXFLAGS)
+dev: ASFLAGS += $(DEV_ASFLAGS)
+
+prod: CFLAGS += $(PROD_CFLAGS)
+prod: CXXFLAGS += $(PROD_CXXFLAGS)
+prod: ASFLAGS += $(PROD_ASFLAGS)
+
+dev: $(OBJS)
 prod: $(OBJS)
 
 $(BUILD_DIR)/src/%.o: %.c
