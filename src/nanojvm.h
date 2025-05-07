@@ -1,120 +1,126 @@
 #ifndef NANOJVM_H
 #define NANOJVM_H
 
-#include <mem/exstack.h>
-#include <mem/heap.h>
-#include <setjmp.h>
-#include <threads.h>
-#include <vmopts.h>
-#include <classparse.h>
-#include <stddef.h>
-
 #define NANOJVM_REVISION "0.1.0"
 
-typedef struct jdk {
-    const char *path;
-    uint8_t mode;
-    void *handle;
-} JDK;
+#include <classparse.h>
 
-typedef struct vm_frame {
-    Method *method;
+#include <stdint.h>
+#include <stddef.h>
+
+#define ERRNO_SEGMENT_TOO_SMALL 0x1
+#define ERRNO_HEAP_INIT_FAILURE 0x2
+#define ERRNO_HEAP_SEGMENT_TOO_SMALL 0x3
+#define ERRNO_HEAP_OOM 0x4
+#define ERRNO_CF_OOM 0x5
+
+typedef struct cached_string {
+    uint64_t hash;
+    // ObjectRegion *region;
+} __attribute__((aligned(4))) CachedString;
+
+typedef struct thread_frame {
     uint8_t *pc;
-    ExStack *locals;
-    ExStack *opstack;
-    jmp_buf ret_buf;
-} ThreadFrame;
+    Method *method;
+    uint16_t local_size;
+    uint16_t opstack_size;
+    uint16_t opstack_top;
+    uint8_t data[]; // First contains (4 * local_size) bytes for local variables, then (4 * opstack_size) bytes for operand stack.
+} __attribute__((packed)) ThreadFrame;
 
-typedef struct vm_thread {
-    thrd_t native_thread;
+typedef struct thread {
     size_t frame_count;
-    ThreadFrame *frames;
-} Thread;
+    ThreadFrame frames[];
+} __attribute__((packed)) Thread;
 
-#define FrameCeiling(THREAD) THREAD->frames[THREAD->frame_count - 1]
-
-struct object_region;
+typedef struct heap Heap;
 
 typedef struct virtual_machine {
-    VmOptions *options;
-    size_t loaded_classes_count;
-    ClassFile **loaded_classes;
-    Heap *heap; 
+    size_t string_pool_count;
+    size_t string_pool_size;
+    CachedString *strings;
+    size_t cf_count;
+    size_t cf_pool_size;
+    void *cf_table; // || uint32_t | ClassFile || ...
+    Heap *heap;
     size_t thread_count;
+    size_t thread_pool_size;
     Thread *threads;
-    size_t natives_count;
-    void **natives;
-    size_t string_count;
-    struct string_entry {
-        uint64_t hash;
-        struct object_region *instance;
-    } *string_pool;
-} VirtualMachine;
+    uint16_t errno;
+} __attribute__((aligned(4))) FreestandingVirtualMachine;
 
-// Initializes the VM, looks for JDK installation, classpath & options etc. Doesn't execute anything on its own.
-VirtualMachine *Initialize(VmOptions *options);
+// Initializes VM and determines the memory segments required for each task. If this operation fails for whatever reason, the errno
+// variable will be set in the returning structure.
+FreestandingVirtualMachine Initialize(void *memory, size_t total_size);
 
-// Performs a cleanup, destroying any trace of the VM.
-void TearDown(VirtualMachine *vm);
+// Initializes VM in a custom manner, you're free to provide whatever sizing you would like for each of the segments.
+// This is preferred if you know what you're doing. If any of segments is incorrectly set(e.g. it is too small), corresponding errno
+// will be set.
+FreestandingVirtualMachine InitializeEx(
+    void *string_pool, size_t string_pool_size, 
+    void *heap, size_t heap_size, 
+    void *thread_data, size_t thread_data_size,
+    void *classfile_pool, size_t classfile_pool_size
+);
 
-/**
- * Attempts to find given Java class in classpath or if it has been already loaded, in memory.
- * If class is not found, NULL is returned.
- */
-ClassFile *FindClass(VirtualMachine *vm, const char *name);
+int Execute(FreestandingVirtualMachine *vm, Thread *thr, Method *method);
+int ExecuteBytecodeInternal(FreestandingVirtualMachine *vm, Thread *thread, ThreadFrame *frame);
+ClassFile *FindClass(FreestandingVirtualMachine *vm, const char *name);
+ClassFile *LoadClass(FreestandingVirtualMachine *vm, void *ptr);
+ThreadFrame *GetTopFrame(Thread *thr);
 
-/**
- * Forcibly loads class file into the VM's memory.
- * This is useful when not using default classpath and using NanoJVM as a library.
- * Please be aware that this function won't check if a class is already present, so it is possible
- * to put duplicate classes inside.
- */
-void ForceLoad(VirtualMachine *vm, ClassFile *cf);
+typedef struct heap_region HeapRegion;
 
-/**
- * Loads an external classfile into the VM's memory and returns it.
- */
-ClassFile *LoadExternal(VirtualMachine *vm, const char *path);
+// ObjectRegion for storing object data
+typedef struct object_region {
+    uint8_t metadata;
+    size_t size;
+    HeapRegion *next;
+    ClassFile *cf;
+    uint8_t data[];
+} __attribute__((packed)) ObjectRegion;
 
-/**
- * Returns the thread matching current thread id.
- */
-Thread *GetCurrent(VirtualMachine *vm);
+// Struct representing byte, char, boolean, short, int and long primitive arrays.
+typedef struct primitive_array_region {
+    uint8_t metadata;
+    size_t size;
+    HeapRegion *next;
+    uint8_t data[];
+} __attribute__((packed)) PrimitiveArrayRegion;
 
-/**
- * Executes bytecode instructions present on given method. This assumes the code attribute is present on the method.
- * It is also possible to specify custom local variable stack and operand stack(purely optional, passing NULL will generate custom). Capacity must match code attribute's.
- *
- * @return NULL if code attribute is not present or method returns void. Otherwise returns what method bytecode decides to, but wrapped in Item struct.
- */
-Item *ExecuteMethodBytecode(VirtualMachine *vm, Method *method, ExStack *lvars, ExStack *opstack);
+// Structure representing arrays of Object arrays. Shares the same structure as ObjectRegion, but is managed differently.
+typedef ObjectRegion ObjectArrayRegion;
 
 /**
- * Executes bytecode instructions present on given method assuming code attribute exists.
- * This method will automatically pickup current thread's frame stack and push/pop to it accordingly.
- * It will also take parameters from the top frame's operand stack.
- *
- * @return NULL if code attribute is not present or mehtod returns void. Otherwise returns what method bytecode would.
+ * Create a new instance of a given class. The region is allocated in the heap memory of the virtual machine.
  */
-Item *InvokeMethod(VirtualMachine *vm, Method *method);
+ObjectRegion *Instantiate(FreestandingVirtualMachine *vm, ClassFile *cf);
 
 /**
- * Looks for a valid JDK installation, this can be later used to resolve basic Java classes.
- * Technically not required, but is recommended.
+ * Create a new instance of an array of given length. The array will be allocated in heap memory of the virtual machine. 
  */
-JDK *SetupJDK(void);
+PrimitiveArrayRegion *InstantiateArray(FreestandingVirtualMachine *vm, uint8_t flags, size_t length);
 
 /**
- * Throws an exception.
- * When an exception is thrown, the VM will attempt to recover from it by traversing the call stack and looking for possible
- * exception handlers. If a valid handler is found, the function will return address of the given frame to return to, with corresponding PC
- * set to the address. If no exception handler is found, VM will print call stack and exit gracefuly, freeing all resources.
+ * Create a new instance of an array of objects of given class. The array will be allocated in heap memory of the VM.
  */
-void ThrowException(VirtualMachine *vm, const char *type, const char *message, ...);
+ObjectArrayRegion *InstantiateObjectArray(FreestandingVirtualMachine *vm, ClassFile *cf, size_t length);
 
 /**
- * Returns a new instance of default VmOptions.
+ * Sets a value in the array at given index. The size of the value will be computed automatically and copied from the
+ * provided pointer. The function accepts both PrimitiveArrayRegion and ObjectArrayRegion. Passing anything else will result in returning 0.
+ * Otherwise returns 1.
  */
-VmOptions *GetDefaultOptions(void);
+int SetArrayValue(HeapRegion *instance, size_t index, void *from);
 
-#endif
+/**
+ * Returns a size of a 1 array element. It will be either 8, 4, 2 or 1.
+ */
+size_t GetArrayElementSize(HeapRegion *region);
+
+/**
+ * Returns a length of given array in heap memory.
+ */
+size_t GetArrayLength(HeapRegion *reg);
+
+#endif // NANOJVM_H
