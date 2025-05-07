@@ -13,12 +13,23 @@
 extern ThreadFrame *push_frame(FreestandingVirtualMachine *vm, Thread *thr, Method *method);
 extern void pop_frame(FreestandingVirtualMachine *vm, Thread *thr);
 
+void pass_parameters(ThreadFrame *callee, ThreadFrame *caller, size_t count)
+{
+    if (count < 1) return;
+    for (size_t i = count; i > 0; i--) {
+        callee->data[i - 1] = PopStack(caller);
+    }
+    callee->top += count;
+}
+
 int ExecuteInternal(FreestandingVirtualMachine *vm, Thread *thread, ThreadFrame *top, Method *method)
 {
     while (top && top->pc) {
         uint8_t opcode = Read8();
         switch (opcode) {
             case NOP: break;
+            case INVOKESPECIAL:
+            case INVOKESTATIC:
             case INVOKEVIRTUAL: {
                 uint16_t index = Read16();
                 MemberRef ref = top->method->cf->constant_pool[index - 1].info.member_ref;
