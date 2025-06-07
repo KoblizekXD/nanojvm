@@ -1,6 +1,7 @@
 #include <classparse.h>
 #include <nanojvm.h>
 #include <memory/opstack.h>
+#include <memory/utils.h>
 
 #define Read16() (*top->pc << 8) | *(top->pc + 1); top->pc += 2
 #define Read8() *top->pc++
@@ -10,16 +11,24 @@
 #define INSTRUCTION(NAME) static inline void handler_##NAME(FreestandingVirtualMachine *vm, Thread *thread, ThreadFrame *frame)
 #define HANDLER_FOR(INSN, HANDLER) case INSN: handler_##HANDLER(vm, thread, top); break;
 
+#define STACK_PTR(frame) ((uint8_t *)((frame)->data + 4 * (frame)->local_size))
+
 extern ThreadFrame *push_frame(FreestandingVirtualMachine *vm, Thread *thr, Method *method);
 extern void pop_frame(FreestandingVirtualMachine *vm, Thread *thr);
 
-void pass_parameters(ThreadFrame *callee, ThreadFrame *caller, size_t count)
+void pass_parameters(ThreadFrame *callee, ThreadFrame *caller)
 {
+    size_t count = GetParameterCount(callee->method);
+    if (!(callee->method->access_flags & ACC_STATIC)) count++;
     if (count < 1) return;
-    for (size_t i = count; i > 0; i--) {
-        callee->data[i - 1] = PopStack(caller);
+    size_t tocopy = 0;
+    for (size_t i = count - 1; i >= 0; i--) {
+        size_t temp = GetParameterSize(callee->method, i);
+        if (temp < 4) temp = 4;
+        tocopy += temp;
     }
-    callee->top += count;
+    caller->opstack_top -= tocopy / 4;
+    memcpy(callee->data, STACK_PTR(caller) + caller->opstack_top, tocopy);
 }
 
 int ExecuteInternal(FreestandingVirtualMachine *vm, Thread *thread, ThreadFrame *top, Method *method)
@@ -34,8 +43,9 @@ int ExecuteInternal(FreestandingVirtualMachine *vm, Thread *thread, ThreadFrame 
                 uint16_t index = Read16();
                 MemberRef ref = top->method->cf->constant_pool[index - 1].info.member_ref;
                 Method *m = GetMethodByNameAndDescriptor(FindClass(vm, *ref.class_info->name), *ref.name_and_type->name, *ref.name_and_type->descriptor);
+                ThreadFrame *caller = GetTopFrame(thread);
                 top = push_frame(vm, thread, m);
-                // TODO: Copy over the parameters
+                pass_parameters(top, caller);
                 break;
             }
             case RETURN:

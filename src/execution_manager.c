@@ -40,6 +40,8 @@ ThreadFrame *push_frame(FreestandingVirtualMachine *vm, Thread *thr, Method *met
 
 void pop_frame(FreestandingVirtualMachine *vm, Thread *thr)
 {
+    ThreadFrame *fr = GetTopFrame(thr);
+    memset(fr, 0, sizeof(ThreadFrame) + (4 * fr->local_size + 4 * fr->opstack_size));
     thr->frame_count--;
 }
 
