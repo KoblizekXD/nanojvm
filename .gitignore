@@ -1,0 +1,13 @@
+buildDir/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+.idea/
+*.iml
+.vscode/
+*.class
+*.o
+*.so
+*.exe
+*.dll
+!nanojvm-tests/java/**
