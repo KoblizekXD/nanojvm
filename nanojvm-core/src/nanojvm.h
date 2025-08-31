@@ -3,6 +3,7 @@
 
 #include <commons.h>
 #include <classfile.h>
+#include <util/array_stack.h>
 
 #ifndef NANOJVM_OVERRIDE_HEAP_SIZING
 typedef uint64_t njvmHeapSizing;
@@ -28,6 +29,13 @@ typedef struct njvmVirtualMachine {
     size_t classfile_count;
     ClassFile *classfiles;
 } VirtualMachine;
+
+typedef struct njvmThreadFrame {
+    Method *method;
+    uint8_t *pc;
+    ArrayStack *operand_stack;
+    ArrayStack *local_vars;
+} ThreadFrame;
 
 /**
  * Creates a new VirtualMachine instance with provided parameters. This function will
@@ -55,6 +63,14 @@ VirtualMachine CreateVirtualMachine(
  * @param vm Pointer to the VirtualMachine instance to initialize the heap for
  */
 void InitializeHeap(VirtualMachine *vm);
+
+/**
+ * Begins execution of the provided method in the current thread context. This function
+ * sets up the necessary thread frame and starts interpreting bytecode from the method.
+ * @param method the method to begin execution from
+ * @return status code returned from execution (usually 0 for success, non-zero for error)
+ */
+int ThreadCurrentExecute(Method *method);
 
 /**
  * Destroys the given VirtualMachine instance, freeing all associated resources.

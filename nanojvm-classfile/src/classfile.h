@@ -122,6 +122,7 @@ typedef struct njvmMethod {
     uint16_t name_index;
     uint16_t descriptor_index;
     uint16_t attributes_count;
+    void *code_attr_off;
     void *attributes;
 } Method;
 
@@ -164,5 +165,14 @@ uint16_t GetMajorVersion(const ClassFile *classfile);
 uint16_t GetMinorVersion(const ClassFile *classfile);
 ConstantPoolEntry GetClassFileName(const ClassFile *classfile);
 ConstantPoolEntry GetSuperClassName(const ClassFile *classfile);
+
+/**
+ * Convenient function to get the code attribute of a method(if it exists).
+ * This function exists because the code attribute is looked for very often in method execution.
+ * @param cf the class file
+ * @param method the method to get the code attribute for
+ * @return The CodeAttribute structure, or an empty structure if not found
+ */
+CodeAttribute GetCodeAttribute(const ClassFile *cf, const Method *method);
 
 #endif //NANOJVM_CLASSFILE_CLASSFILE_H

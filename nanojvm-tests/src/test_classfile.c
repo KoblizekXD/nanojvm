@@ -102,6 +102,15 @@ TEST TestMethodAttributeInformation(void)
     PASS();
 }
 
+TEST TestMethodQuickCodeLookup(void)
+{
+    const Method m = GetMethod(&cf, 1);
+    ASSERT(m.code_attr_off != NULL);
+    const CodeAttribute code_attr = GetCodeAttribute(&cf, &m);
+    ASSERT(code_attr.code_length == 9);
+    PASS();
+}
+
 TEST TestFieldInformation(void)
 {
     ASSERT(cf.field_count == 2);
@@ -143,6 +152,7 @@ SUITE(classfile_suite)
     RUN_TEST(TestClassFileConstantPoolIterator);
     RUN_TEST(TestMethodInformation);
     RUN_TEST(TestMethodAttributeInformation);
+    RUN_TEST(TestMethodQuickCodeLookup);
     RUN_TEST(TestFieldInformation);
     RUN_TEST(TestFieldAttributeInformation);
 }

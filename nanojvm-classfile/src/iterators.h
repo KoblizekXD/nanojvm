@@ -33,7 +33,8 @@ ConstantPoolEntry GetConstantPoolEntry(const ClassFile *classfile, uint16_t inde
  */
 Iterator CreateAttributeIterator(const ClassFile *classfile, const void *source, uint8_t meta);
 AttributeInfo AttributeIteratorNext(Iterator *it);
-AttributeInfo GetAttributeInfo(const void *source, uint8_t meta, uint16_t index);
+AttributeInfo GetAttributeInfo(const ClassFile *classfile, void *attr_ptr, uint16_t attr_count, uint32_t synth_attribute_type);
+AttributeInfo ReadAttributeAt(const ClassFile *classfile, void **ptr);
 
 Iterator CreateFieldIterator(const ClassFile *classfile);
 Field FieldIteratorNext(Iterator *it);
