@@ -67,10 +67,11 @@ void InitializeHeap(VirtualMachine *vm);
 /**
  * Begins execution of the provided method in the current thread context. This function
  * sets up the necessary thread frame and starts interpreting bytecode from the method.
+ * @param classfile the class file containing the method to execute
  * @param method the method to begin execution from
  * @return status code returned from execution (usually 0 for success, non-zero for error)
  */
-int ThreadCurrentExecute(Method *method);
+int ThreadCurrentExecute(const ClassFile *classfile, Method *method);
 
 /**
  * Destroys the given VirtualMachine instance, freeing all associated resources.
