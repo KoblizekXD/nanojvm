@@ -101,7 +101,7 @@ typedef struct {} DeprecatedAttribute;
 struct njvmAttributeInfo {
     uint16_t attribute_name;
     uint32_t attribute_length;
-    uint16_t synth_attribute_type; // Synthetic value for easier distinction - see constants.h for ATTR_* based constants
+    uint32_t synth_attribute_type; // Synthetic value for easier distinction - see constants.h for ATTR_* based constants
     union njvmAttributeData {
         ConstantValueAttribute constant_value;
         CodeAttribute code;

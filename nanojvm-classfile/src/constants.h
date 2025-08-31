@@ -42,36 +42,36 @@
 
 // Types of attributes
 #define ATTR_UNKNOWN                                    0
-#define ATTR_CONSTANT_VALUE                             1
-#define ATTR_CODE                                       2
-#define ATTR_STACK_MAP_TABLE                            3
-#define ATTR_EXCEPTIONS                                 4
-#define ATTR_INNER_CLASSES                              5
-#define ATTR_ENCLOSING_METHOD                           6
-#define ATTR_SYNTHETIC                                  7
-#define ATTR_SIGNATURE                                  8
-#define ATTR_SOURCE_FILE                                9
-#define ATTR_SOURCE_DEBUG_EXTENSION                     10
-#define ATTR_LINE_NUMBER_TABLE                          11
-#define ATTR_LOCAL_VARIABLE_TABLE                       12
-#define ATTR_LOCAL_VARIABLE_TYPE_TABLE                  13
-#define ATTR_DEPRECATED                                 14
-#define ATTR_RUNTIME_VISIBLE_ANNOTATIONS                15
-#define ATTR_RUNTIME_INVISIBLE_ANNOTATIONS              16
-#define ATTR_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS      17
-#define ATTR_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS    18
-#define ATTR_RUNTIME_VISIBLE_TYPE_ANNOTATIONS           19
-#define ATTR_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS         20
-#define ATTR_ANNOTATION_DEFAULT                         21
-#define ATTR_BOOTSTRAP_METHODS                          22
-#define ATTR_METHOD_PARAMETERS                          23
-#define ATTR_MODULE                                     24
-#define ATTR_MODULE_PACKAGES                            25
-#define ATTR_MODULE_MAIN_CLASS                          26
-#define ATTR_NEST_HOST                                  27
-#define ATTR_NEST_MEMBERS                               28
-#define ATTR_RECORD                                     29
-#define ATTR_PERMITTED_SUBCLASSES                       30
+#define ATTR_CONSTANT_VALUE                             0x00b20b4c
+#define ATTR_CODE                                       0x7c83b260
+#define ATTR_STACK_MAP_TABLE                            0x65528041
+#define ATTR_EXCEPTIONS                                 0xb0bb9c47
+#define ATTR_INNER_CLASSES                              0xab595e6f
+#define ATTR_ENCLOSING_METHOD                           0x0c60f188
+#define ATTR_SYNTHETIC                                  0x8b42a240
+#define ATTR_SIGNATURE                                  0x9dd84ab7
+#define ATTR_SOURCE_FILE                                0x36cfd5d6
+#define ATTR_SOURCE_DEBUG_EXTENSION                     0x35d544ba
+#define ATTR_LINE_NUMBER_TABLE                          0xbe9b7afe
+#define ATTR_LOCAL_VARIABLE_TABLE                       0x90d6b3de
+#define ATTR_LOCAL_VARIABLE_TYPE_TABLE                  0x0d33dd80
+#define ATTR_DEPRECATED                                 0xd4a0ded6
+#define ATTR_RUNTIME_VISIBLE_ANNOTATIONS                0x6bfed7c5
+#define ATTR_RUNTIME_INVISIBLE_ANNOTATIONS              0xc0fccbbc
+#define ATTR_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS      0xc30663a6
+#define ATTR_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS    0xf297bd7d
+#define ATTR_RUNTIME_VISIBLE_TYPE_ANNOTATIONS           0xaf5a8b67
+#define ATTR_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS         0x798fa2de
+#define ATTR_ANNOTATION_DEFAULT                         0xde491da5
+#define ATTR_BOOTSTRAP_METHODS                          0x2aaa2277
+#define ATTR_METHOD_PARAMETERS                          0x0aa5c1da
+#define ATTR_MODULE                                     0xc38db30b
+#define ATTR_MODULE_PACKAGES                            0xf303020a
+#define ATTR_MODULE_MAIN_CLASS                          0xc8aea4e6
+#define ATTR_NEST_HOST                                  0xeb19dc3d
+#define ATTR_NEST_MEMBERS                               0xa258b38a
+#define ATTR_RECORD                                     0xce81e404
+#define ATTR_PERMITTED_SUBCLASSES                       0xf43544ab
 
 // ===================================================== INSTRUCTION OPCODES
 
