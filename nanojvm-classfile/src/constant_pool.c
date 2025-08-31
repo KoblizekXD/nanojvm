@@ -16,7 +16,7 @@ ConstantPoolEntry get_entry(void **ptr)
             entry.info.fieldref_methodref_interfacemethodref.name_and_type_index = get16(ptr);
             break;
         case CONSTANT_String:
-            entry.info.string_info.string_index = get16(ptr);
+            entry.info.string_info.string_index = get16(ptr) - 1;
             break;
         case CONSTANT_Integer:
         case CONSTANT_Float:
@@ -28,8 +28,8 @@ ConstantPoolEntry get_entry(void **ptr)
             entry.info.long_double_info.low_bytes = get32(ptr);
             break;
         case CONSTANT_NameAndType:
-            entry.info.name_and_type_info.name_index = get16(ptr);
-            entry.info.name_and_type_info.descriptor_index = get16(ptr);
+            entry.info.name_and_type_info.name_index = get16(ptr) - 1;
+            entry.info.name_and_type_info.descriptor_index = get16(ptr) - 1;
             break;
         case CONSTANT_Utf8:
             entry.info.utf8_info.length = get16(ptr);
@@ -38,19 +38,19 @@ ConstantPoolEntry get_entry(void **ptr)
             break;
         case CONSTANT_MethodHandle:
             entry.info.method_handle_info.reference_kind = get8(ptr);
-            entry.info.method_handle_info.reference_index = get16(ptr);
+            entry.info.method_handle_info.reference_index = get16(ptr) - 1;
             break;
         case CONSTANT_MethodType:
-            entry.info.method_type_info.descriptor_index = get16(ptr);
+            entry.info.method_type_info.descriptor_index = get16(ptr) - 1;
             break;
         case CONSTANT_Dynamic:
         case CONSTANT_InvokeDynamic:
-            entry.info.invoke_dynamic_info.bootstrap_method_attr_index = get16(ptr);
-            entry.info.invoke_dynamic_info.name_and_type_index = get16(ptr);
+            entry.info.invoke_dynamic_info.bootstrap_method_attr_index = get16(ptr) - 1;
+            entry.info.invoke_dynamic_info.name_and_type_index = get16(ptr) - 1;
             break;
         case CONSTANT_Package:
         case CONSTANT_Module:
-            entry.info.package_info.name_index = get16(ptr);
+            entry.info.package_info.name_index = get16(ptr) - 1;
             break;
         default: return (ConstantPoolEntry){0};
     }

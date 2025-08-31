@@ -62,7 +62,7 @@ TEST TestClassFileConstantPoolIterator(void)
 
 TEST TestMethodInformation(void)
 {
-    ASSERT(cf.method_count == 2);
+    ASSERT(cf.method_count == 3);
     Iterator it = CreateMethodIterator(&cf);
     int i = 0;
     while (IteratorHasNext(&it)) {
@@ -102,6 +102,38 @@ TEST TestMethodAttributeInformation(void)
     PASS();
 }
 
+TEST TestFieldInformation(void)
+{
+    ASSERT(cf.field_count == 2);
+    const Field f = GetField(&cf, 1);
+    ConstantPoolEntry entry = GetConstantPoolEntry(&cf, f.name_index);
+    ASSERT(entry.tag == CONSTANT_Utf8 && StringEquals(&entry.info.utf8_info, "x"));
+    entry = GetConstantPoolEntry(&cf, f.descriptor_index);
+    ASSERT(entry.tag == CONSTANT_Utf8 && StringEquals(&entry.info.utf8_info, "I"));
+    ASSERT(f.access_flags & (ACC_PRIVATE | ACC_STATIC));
+    PASS();
+}
+
+TEST TestFieldAttributeInformation(void)
+{
+    const Field f = GetField(&cf, 0);
+    ASSERT(f.attributes_count == 1);
+    Iterator it = CreateAttributeIterator(&cf, &f, ITERATOR_ATTRIBUTE_SOURCE_FIELD);
+    int i = 0;
+    while (IteratorHasNext(&it)) {
+        AttributeInfo inf = AttributeIteratorNext(&it);
+        ASSERT(inf.synth_attribute_type == ATTR_CONSTANT_VALUE);
+        ConstantPoolEntry entry = GetConstantPoolEntry(&cf, inf.data.constant_value.constantvalue_index);
+        ASSERT(entry.tag == CONSTANT_String);
+        ConstantPoolEntry tmp = GetConstantPoolEntry(&cf, entry.info.string_info.string_index);
+        ASSERT(StringEquals(
+            &tmp.info.utf8_info, "constant"));
+        i++;
+    }
+    ASSERT(i == f.attributes_count);
+    PASS();
+}
+
 SUITE(classfile_suite)
 {
     SET_SETUP(Setup, NULL);
@@ -111,4 +143,6 @@ SUITE(classfile_suite)
     RUN_TEST(TestClassFileConstantPoolIterator);
     RUN_TEST(TestMethodInformation);
     RUN_TEST(TestMethodAttributeInformation);
+    RUN_TEST(TestFieldInformation);
+    RUN_TEST(TestFieldAttributeInformation);
 }
