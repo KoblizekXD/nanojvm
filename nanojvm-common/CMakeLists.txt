@@ -1,10 +1,11 @@
 
 add_library(nanojvm-common STATIC
-    src/strrchr.c
-    src/logging.c
-    src/reader.c
-    src/strlen.c
+        src/strrchr.c
+        src/logging.c
+        src/reader.c
+        src/strlen.c
         src/djb2.c
+        src/memory.c
 )
 
 target_include_directories(nanojvm-common

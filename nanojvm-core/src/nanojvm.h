@@ -60,6 +60,6 @@ void InitializeHeap(VirtualMachine *vm);
  * Destroys the given VirtualMachine instance, freeing all associated resources.
  * @param vm Pointer to the VirtualMachine instance to be destroyed
  */
-void DestroyVirtualMachine(VirtualMachine *vm);
+void DestroyVirtualMachine(const VirtualMachine *vm);
 
 #endif // NANOJVM_CORE_NANOJVM_H

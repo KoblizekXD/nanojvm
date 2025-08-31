@@ -84,5 +84,9 @@ size_t StringLength(const char *s);
 uint32_t StringHash(const char *s);
 // djb2 string hash function with length limit
 uint32_t StringHashEx(const char *s, size_t length);
+// memcpy implementation
+void *MemoryCopy(void *dest, const void *src, size_t n);
+// memset implementation
+void *MemorySet(void *s, int c, size_t n);
 
 #endif //NANOJVM_COMMON_COMMONS_H

@@ -1,6 +1,7 @@
 
 add_library(nanojvm-core STATIC
         src/nanojvm.c
+        src/util/array_stack.c
 )
 
 target_include_directories(nanojvm-core
