@@ -11,5 +11,5 @@ endif()
 add_subdirectory(nanojvm-common)
 add_subdirectory(nanojvm-classfile)
 add_subdirectory(nanojvm-tests)
-# add_subdirectory(nanojvm-core)
+add_subdirectory(nanojvm-core)
 
