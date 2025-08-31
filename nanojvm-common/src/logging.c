@@ -1,6 +1,8 @@
 #include <commons.h>
 #include <stdarg.h>
 
+#if defined(ENABLE_LOGGING_IN_FREESTANDING_ENV) || !defined(FREESTANDING)
+
 extern int printf(const char *restrict format, ...);
 extern int vprintf(const char *restrict format, va_list ap);
 
@@ -29,5 +31,7 @@ void log_message(const int status, const char *format, ...)
     va_end(args);
     printf("\033[39m\n");
 }
+
+#endif
 
 #endif

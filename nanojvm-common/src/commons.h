@@ -5,9 +5,7 @@
 #include <stdint.h>
 
 #if defined(__STDC_HOSTED__) && __STDC_HOSTED__ == 0
-    #define FREESTANDING 1
-#else
-    #define FREESTANDING 0
+    #define FREESTANDING
 #endif
 
 typedef void *(*njvmMalloc)(size_t size);
@@ -23,6 +21,8 @@ typedef void *(*njvmRealloc)(void *ptr, size_t size);
 
 // strrchr implementation
 char *StrRCharSearch(const char *s, int c);
+
+#if defined(ENABLE_LOGGING_IN_FREESTANDING_ENV) || !defined(FREESTANDING)
 
 #ifdef DEBUG
 
@@ -41,6 +41,15 @@ void log_message(int status, const char *format, ...);
 #define warn(message, ...) log_message(LOG_STATUS_WARN, message, ##__VA_ARGS__)
 #define error(message, ...) log_message(LOG_STATUS_ERROR, message, ##__VA_ARGS__)
 #define debug(message, ...)
+#endif
+
+#else
+
+#define info(message, ...)
+#define warn(message, ...)
+#define error(message, ...)
+#define debug(message, ...)
+
 #endif
 
 /*
