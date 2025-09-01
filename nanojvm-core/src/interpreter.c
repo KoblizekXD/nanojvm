@@ -1,8 +1,6 @@
 #include <classfile.h>
 #include <nanojvm.h>
 
-extern int frame_execute(const ClassFile *cf, Method *method);
-
 typedef void (*instruction_handler)(
     const VirtualMachine *vm,
     const ClassFile *cf,
@@ -1062,11 +1060,12 @@ int bytecode_execute_internal(
 )
 {
     while (*pc < code->code + code->code_length) {
-        if (**pc == 0xFF)
-            instruction_IMPDEP2(vm, cf, method, opstack, localvars, pc, code);
-        else if (**pc == 0xFE)
+        const uint8_t opcode = **pc;
+        if (opcode < 0xFE) {
+            instruction_handlers[**pc](vm, cf, method, opstack, localvars, pc, code);
+        } else if (opcode == 0xFE)
             instruction_IMPDEP1(vm, cf, method, opstack, localvars, pc, code);
-        else instruction_handlers[**pc](vm, cf, method, opstack, localvars, pc, code);
+        else instruction_IMPDEP2(vm, cf, method, opstack, localvars, pc, code);
     }
     return 0;
 }

@@ -30,12 +30,21 @@ typedef struct njvmVirtualMachine {
     ClassFile *classfiles;
 } VirtualMachine;
 
-typedef struct njvmThreadFrame {
-    Method *method;
-    uint8_t *pc;
-    ArrayStack *operand_stack;
-    ArrayStack *local_vars;
-} ThreadFrame;
+#define RESULT_OK 0
+#define RESULT_EXIT 1
+#define RESULT_EXCEPTION 2
+
+/**
+ * Structure representing the result of a method or frame execution.
+ * The value field can hold different types based on the execution outcome:
+ * - For normal returns, it holds the NULL
+ * - For exceptions, it holds a pointer to the exception object
+ * - For exit signals, it holds the exit code as an integer
+ */
+typedef struct njvmExecutionResult {
+    int state;
+    uintptr_t value;
+} ExecutionResult;
 
 /**
  * Creates a new VirtualMachine instance with provided parameters. This function will
@@ -67,11 +76,12 @@ void InitializeHeap(VirtualMachine *vm);
 /**
  * Begins execution of the provided method in the current thread context. This function
  * sets up the necessary thread frame and starts interpreting bytecode from the method.
+ * @param vm the VirtualMachine instance to execute the method in
  * @param classfile the class file containing the method to execute
  * @param method the method to begin execution from
  * @return status code returned from execution (usually 0 for success, non-zero for error)
  */
-int ThreadCurrentExecute(const ClassFile *classfile, Method *method);
+int ThreadCurrentExecute(const VirtualMachine *vm, const ClassFile *classfile, Method *method);
 
 /**
  * Destroys the given VirtualMachine instance, freeing all associated resources.
