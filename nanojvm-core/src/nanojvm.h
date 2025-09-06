@@ -15,20 +15,79 @@ typedef NANOJVM_OVERRIDE_HEAP_SIZING njvmHeapSizing;
 #define HEAP_CONF_ALLOW_SHRINK (1 << 1)
 #define HEAP_CONF_ALLOW_EXPAND (1 << 2)
 
-typedef struct njvmVirtualMachine {
+/**
+ * NanoJVM uses virtual addresses to reference memory locations within its managed heap.
+ * It represents an offset from the start of the heap memory block, this removes the additional
+ * overhead of relocating raw pointers when the heap is resized or moved.
+ */
+typedef uintptr_t VirtualAddress;
+
+#define HEAP_MEMORY_USED (1 << 0)
+
+/**
+ * Structure representing a memory area in the heap. Each memory area contains
+ * metadata about the allocation, its size, a pointer to the next memory area,
+ * and the actual data block.
+ */
+typedef struct njvmMemoryRegion {
+    uint8_t metadata; // metadata flags (e.g., allocation status)
+    size_t size; // size of the data block
+    VirtualAddress next; // virtual address of the next memory region
+    uint8_t data[]; // flexible array member for the data block
+} __attribute__((packed)) MemoryRegion;
+
+typedef struct njvmHeapArea {
+    njvmHeapSizing size;
+    MemoryRegion *free_head; // pointer to the head of the free list
+    MemoryRegion *used_head; // pointer to the head of the used list
+    MemoryRegion memory[];
+} __attribute__((packed)) HeapArea;
+
+typedef struct njvmVirtualMachine VirtualMachine;
+
+/**
+ * Function, which allocates a block of memory in VM's heap memory area.
+ * @param vm the virtual machine instance
+ * @param size the size to attempt to allocate
+ * @return a virtual address representing the allocated memory block, or 0 on failure
+ */
+VirtualAddress Malloc(const VirtualMachine *vm, size_t size);
+
+/**
+ * Function, which frees a previously allocated block of memory in VM's heap memory area.
+ * The VM will throw an error if the address is invalid or was not dynamically allocated.
+ * @param vm the virtual machine instance
+ * @param addr the virtual address to free
+ */
+void Free(const VirtualMachine *vm, VirtualAddress addr);
+
+/**
+ * Function, which resizes a previously allocated block of memory in VM's heap memory area.
+ * @param heap the heap area
+ * @param ptr the raw pointer to convert
+ */
+#define ToVirtual(heap, ptr) ((VirtualAddress)((uint8_t *)ptr - (uint8_t *)heap))
+
+/**
+ * Converts a virtual address to a raw pointer within the heap memory area.
+ * @param heap the heap area
+ * @param addr the virtual address to convert
+ */
+#define FromVirtual(heap, addr) ((void *)((uint8_t *)heap + addr))
+
+struct njvmVirtualMachine {
     njvmMalloc heapAlloc;
     njvmFree heapFree;
     njvmRealloc heapRealloc;
     struct njvmHeapConfiguration {
         njvmHeapSizing initial_size;
         njvmHeapSizing max_size;
-        njvmHeapSizing current_size;
         uint8_t heap_conf;
-        void *memory;
+        HeapArea *memory;
     } heap;
     size_t classfile_count;
     ClassFile *classfiles;
-} VirtualMachine;
+};
 
 #define RESULT_OK 0
 #define RESULT_EXIT 1

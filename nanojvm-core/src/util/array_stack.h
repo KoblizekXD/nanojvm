@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/**
+ * A general purpose stack-like structure backed by a fixed-size array.
+ * It supports pushing and popping of arbitrary data types by specifying their size.
+ */
 typedef struct njvmArrayStack {
     size_t size;
     size_t capacity;

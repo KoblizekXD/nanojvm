@@ -13,7 +13,6 @@ VirtualMachine CreateVirtualMachine(
         .heap = (struct njvmHeapConfiguration) {
             .initial_size = heap_initial_size,
             .max_size = UINT64_MAX,
-            .current_size = heap_initial_size,
             .heap_conf = HEAP_CONF_ALLOW_GC | HEAP_CONF_ALLOW_EXPAND | HEAP_CONF_ALLOW_SHRINK,
             .memory = NULL
         }
@@ -27,6 +26,10 @@ void InitializeHeap(VirtualMachine *vm)
         error("Initial heap allocation of %llu bytes failed, the state of memory is unknown", vm->heap.initial_size);
         return;
     }
+    vm->heap.memory->used_head = NULL;
+    vm->heap.memory->free_head = (MemoryRegion *)vm->heap.memory->memory;
+    vm->heap.memory->size = vm->heap.initial_size;
+    MemorySet(vm->heap.memory->memory, 0, vm->heap.memory->size);
     info("Successfully requested %llu bytes of heap memory", vm->heap.initial_size);
 }
 

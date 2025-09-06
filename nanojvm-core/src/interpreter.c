@@ -1,6 +1,17 @@
 #include <classfile.h>
 #include <nanojvm.h>
 
+typedef struct njvmInstructionHandlerParams {
+    const VirtualMachine *vm;
+    const ClassFile *cf;
+    Method *method;
+    ArrayStack *opstack;
+    ArrayStack *localvars;
+    uint8_t **pc;
+    const CodeAttribute *code;
+
+} InstructionHandlerParams;
+
 typedef void (*instruction_handler)(
     const VirtualMachine *vm,
     const ClassFile *cf,
@@ -11,7 +22,7 @@ typedef void (*instruction_handler)(
     const CodeAttribute *code
 );
 
-#define INSTRUCTION_HANDLER(NAME) void *instruction_##NAME( \
+#define INSTRUCTION_HANDLER(NAME) void instruction_##NAME( \
     const VirtualMachine *vm, \
     const ClassFile *cf, \
     Method *method, \
