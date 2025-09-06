@@ -1,0 +1,5 @@
+# CODEOWNERS file
+# This file defines the default reviewers for all pull requests in this repository.
+# When a pull request is created, GitHub will automatically request reviews from these users.
+
+* @KoblizekXD
