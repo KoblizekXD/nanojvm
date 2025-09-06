@@ -1,20 +1,6 @@
 #include <nanojvm.h>
 #include <util/memory_region_ll.h>
 
-// Simple first-fit memory region locator for malloc
-MemoryRegion *find_fit(HeapArea *heap, const size_t size)
-{
-    MemoryRegion *current = heap->free_head;
-    while (current != NULL) {
-        if (!(current->metadata & HEAP_MEMORY_USED) && (current->size + sizeof(MemoryRegion)) >= size) {
-            return current;
-        }
-        if (current->next == 0) break;
-        current = FromVirtual(heap, current->next);
-    }
-    return NULL;
-}
-
 VirtualAddress Malloc(const VirtualMachine *vm, const size_t size)
 {
     debug("Heap memory request of %zu bytes(%zu bytes incl. metadata)", size, size + sizeof(MemoryRegion));
@@ -22,7 +8,7 @@ VirtualAddress Malloc(const VirtualMachine *vm, const size_t size)
         debug("Heap memory size is zero");
         return 0;
     }
-    MemoryRegion *reg = find_fit(vm->heap.memory, size);
+    MemoryRegion *reg = RegionFindFit(vm->heap.memory, size);
     if (reg == NULL) {
         error("Out of memory: failed to allocate %zu bytes", size);
         return 0;
@@ -50,4 +36,5 @@ void Free(const VirtualMachine *vm, const VirtualAddress addr)
     RegionRemove(vm->heap.memory, &vm->heap.memory->used_head, reg);
     reg->metadata &= ~HEAP_MEMORY_USED;
     RegionAppend(vm->heap.memory, &vm->heap.memory->free_head, reg);
+    AttemptMergeWithAdjacent(vm->heap.memory, vm->heap.memory->free_head);
 }

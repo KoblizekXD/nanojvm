@@ -54,7 +54,7 @@ TEST TestSimpleHeapAllocation(void)
     ASSERT(CountRegions(vm.heap.memory, vm.heap.memory->free_head) == 1);
     Free(&vm, addr);
     ASSERT(CountRegions(vm.heap.memory, vm.heap.memory->used_head) == 0);
-    ASSERT(CountRegions(vm.heap.memory, vm.heap.memory->free_head) == 2);
+    ASSERT(CountRegions(vm.heap.memory, vm.heap.memory->free_head) == 1);
     PASS();
 }
 
@@ -62,10 +62,13 @@ TEST TestMultipleHeapAllocations(void)
 {
     const VirtualAddress addr = Malloc(&vm, 128);
     ASSERT(addr != 0);
-    VirtualAddress addr2 = Malloc(&vm, 256);
+    const VirtualAddress addr2 = Malloc(&vm, 256);
     visualize_heap(vm.heap.memory);
     Free(&vm, addr);
+    Free(&vm, addr2);
     visualize_heap(vm.heap.memory);
+    ASSERT(CountRegions(vm.heap.memory, vm.heap.memory->used_head) == 0);
+    ASSERT(CountRegions(vm.heap.memory, vm.heap.memory->free_head) == 1);
     PASS();
 }
 
