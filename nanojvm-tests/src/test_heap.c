@@ -58,10 +58,22 @@ TEST TestSimpleHeapAllocation(void)
     PASS();
 }
 
+TEST TestMultipleHeapAllocations(void)
+{
+    const VirtualAddress addr = Malloc(&vm, 128);
+    ASSERT(addr != 0);
+    VirtualAddress addr2 = Malloc(&vm, 256);
+    visualize_heap(vm.heap.memory);
+    Free(&vm, addr);
+    visualize_heap(vm.heap.memory);
+    PASS();
+}
+
 GREATEST_SUITE(heap_suite)
 {
     SET_SETUP(Setup, NULL);
     SET_TEARDOWN(TearDown, NULL);
     RUN_TEST(TestHeapInitialization);
     RUN_TEST(TestSimpleHeapAllocation);
+    RUN_TEST(TestMultipleHeapAllocations);
 }

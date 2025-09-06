@@ -8,6 +8,12 @@ void RegionAppend(HeapArea *heap, MemoryRegion **base, MemoryRegion *element)
         return;
     }
 
+    if (ToVirtual(heap, element) < ToVirtual(heap, *base)) {
+        element->next = ToVirtual(heap, *base);
+        *base = element;
+        return;
+    }
+
     MemoryRegion *current = *base;
     const VirtualAddress virtual_element = ToVirtual(heap, element);
 
