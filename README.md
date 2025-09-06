@@ -15,7 +15,8 @@ the main `CMakeLists.txt` file located in the root directory.
 |-------------------|-------------------------------------------------------------------------------------------|---------------|------------|
 | nanojvm-classfile | Freestanding library for reading & parsing Java class files. See README for more details. |       ❌       |      ❌     |
 | nanojvm-common    | Common utilities used by all other modules.                                               |       ❌       |      ❌     |
-| nanojvm-tests     | Tests for all other modules(uses Greatest as testing library)                             |       ✅       |      ✅     |
+| nanojvm-tests     | Tests for all other modules(uses Greatest as testing library).                            |       ✅       |      ✅     |
+| nanojvm-core      | Core NanoJVM library, containg interpreter, heap allocator and more.                      |       ❌       |      ❌     |
 
 ## License
 
