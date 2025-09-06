@@ -1,4 +1,5 @@
 #include <nanojvm.h>
+#include <util/memory_region_ll.h>
 
 // Simple first-fit memory region locator for malloc
 MemoryRegion *find_fit(HeapArea *heap, const size_t size)
@@ -14,39 +15,13 @@ MemoryRegion *find_fit(HeapArea *heap, const size_t size)
     return NULL;
 }
 
-// Append an element to the end of a virtual memory linked list
-void append_ll(HeapArea *heap, MemoryRegion **base, MemoryRegion *element)
-{
-    if (*base == NULL) {
-        *base = element;
-        return;
-    }
-    MemoryRegion *current = *base;
-    while (current->next != 0) {
-        current = FromVirtual(heap, current->next);
-    }
-    current->next = ToVirtual(heap, element);
-}
-
-void remove_used(HeapArea *heap, const MemoryRegion *reg)
-{
-    if (heap->used_head == reg) {
-        heap->used_head = (reg->next == 0) ? NULL : (MemoryRegion *)((uint8_t *)heap + reg->next);
-        return;
-    }
-    MemoryRegion *current = heap->used_head;
-    while (current != NULL && current->next != 0) {
-        MemoryRegion *next = (MemoryRegion *)((uint8_t *)heap + current->next);
-        if (next == reg) {
-            current->next = next->next;
-            return;
-        }
-        current = next;
-    }
-}
-
 VirtualAddress Malloc(const VirtualMachine *vm, const size_t size)
 {
+    debug("Heap memory request of %zu bytes(%zu bytes incl. metadata)", size, size + sizeof(MemoryRegion));
+    if (size == 0) {
+        debug("Heap memory size is zero");
+        return 0;
+    }
     MemoryRegion *reg = find_fit(vm->heap.memory, size);
     if (reg == NULL) {
         error("Out of memory: failed to allocate %zu bytes", size);
@@ -55,23 +30,24 @@ VirtualAddress Malloc(const VirtualMachine *vm, const size_t size)
     MemoryRegion *next = (void*) reg->data + size;
     next->metadata = 0;
     next->size = reg->size - size - sizeof(MemoryRegion);
-    next->next = reg->next;
     reg->metadata |= HEAP_MEMORY_USED;
     reg->size = size;
-    reg->next = 0;
-    append_ll(vm->heap.memory, &vm->heap.memory->used_head, reg);
-    append_ll(vm->heap.memory, &vm->heap.memory->free_head, reg);
-    return ToVirtual(vm->heap.memory, reg->data);
+
+    RegionAppend(vm->heap.memory, &vm->heap.memory->used_head, reg);
+    RegionRemove(vm->heap.memory, &vm->heap.memory->free_head, reg);
+    RegionAppend(vm->heap.memory, &vm->heap.memory->free_head, next);
+    return ToVirtual(vm->heap.memory, reg);
 }
 
 void Free(const VirtualMachine *vm, const VirtualAddress addr)
 {
     if (addr == 0) return;
-    MemoryRegion *reg = (MemoryRegion *) FromVirtual(vm->heap.memory, addr) - 1;
+    MemoryRegion *reg = FromVirtual(vm->heap.memory, addr);
     if (!(reg->metadata & HEAP_MEMORY_USED)) {
         error("Double free detected at address %p", (void *)addr);
         return;
     }
+    RegionRemove(vm->heap.memory, &vm->heap.memory->used_head, reg);
     reg->metadata &= ~HEAP_MEMORY_USED;
-    remove_used(vm->heap.memory, reg);
+    RegionAppend(vm->heap.memory, &vm->heap.memory->free_head, reg);
 }

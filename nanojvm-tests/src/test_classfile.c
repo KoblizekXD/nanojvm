@@ -6,7 +6,7 @@
 uint8_t *buffer;
 ClassFile cf;
 
-void Setup(void *data)
+static void Setup(void *data)
 {
     FILE *test_fp = fopen("java/Test1.class", "rb");
     fseek(test_fp, 0, SEEK_END);
@@ -18,7 +18,7 @@ void Setup(void *data)
     fclose(test_fp);
 }
 
-void TearDown(void *data)
+static void TearDown(void *data)
 {
     free(buffer);
 }

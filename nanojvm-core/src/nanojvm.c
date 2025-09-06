@@ -30,6 +30,7 @@ void InitializeHeap(VirtualMachine *vm)
     vm->heap.memory->free_head = (MemoryRegion *)vm->heap.memory->memory;
     vm->heap.memory->size = vm->heap.initial_size;
     MemorySet(vm->heap.memory->memory, 0, vm->heap.memory->size);
+    vm->heap.memory->free_head->size = vm->heap.initial_size - sizeof(MemoryRegion);
     info("Successfully requested %llu bytes of heap memory", vm->heap.initial_size);
 }
 

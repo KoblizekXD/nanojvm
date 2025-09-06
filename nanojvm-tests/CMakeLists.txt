@@ -4,6 +4,7 @@ add_executable(nanojvm-tests
         src/test_main.c
         src/test_classfile.c
         src/test_array_stack.c
+        src/test_heap.c
 )
 
 target_link_libraries(nanojvm-tests

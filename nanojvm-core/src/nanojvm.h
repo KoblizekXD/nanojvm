@@ -37,7 +37,7 @@ typedef struct njvmMemoryRegion {
 } __attribute__((packed)) MemoryRegion;
 
 typedef struct njvmHeapArea {
-    njvmHeapSizing size;
+    njvmHeapSizing size; // total size of the heap area(including struct data)
     MemoryRegion *free_head; // pointer to the head of the free list
     MemoryRegion *used_head; // pointer to the head of the used list
     MemoryRegion memory[];
