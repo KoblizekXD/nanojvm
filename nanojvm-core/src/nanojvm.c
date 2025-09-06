@@ -1,5 +1,19 @@
 #include <nanojvm.h>
 
+ClassFile *LoadClassFile(const VirtualMachine *vm, const uint8_t *bytes, const size_t length)
+{
+    for (int i = 0; i < vm->classfile_count; ++i) {
+        const ClassFile *cf = &vm->classfiles[i];
+        const ConstantPoolEntry entry = GetClassFileName(cf);
+        if (entry.tag == 0) continue;
+        const struct CONSTANT_Utf8_info name = entry.info.utf8_info;
+        if (name.length == length && MemoryCompare(name.bytes, bytes, length) == 0) {
+            return (ClassFile *)cf;
+        }
+    }
+    return NULL;
+}
+
 VirtualMachine CreateVirtualMachine(
     const njvmMalloc heapAlloc, const njvmFree heapFree, const njvmRealloc heapRealloc,
     const njvmHeapSizing heap_initial_size, const size_t classfile_count, ClassFile *classfiles

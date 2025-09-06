@@ -23,6 +23,9 @@ typedef NANOJVM_OVERRIDE_HEAP_SIZING njvmHeapSizing;
 typedef uintptr_t VirtualAddress;
 
 #define HEAP_MEMORY_USED (1 << 0)
+// 0b01 - Object; 0b11 - Object Array; 0b10 - Primitive Array; 0b00 - Free/Other
+#define HEAP_MEMORY_TYPE_1 (1 << 1)
+#define HEAP_MEMORY_TYPE_2 (1 << 2)
 
 /**
  * Structure representing a memory area in the heap. Each memory area contains
@@ -34,7 +37,19 @@ typedef struct njvmMemoryRegion {
     size_t size; // size of the data block
     VirtualAddress next; // virtual address of the next memory region
     uint8_t data[]; // flexible array member for the data block
-} __attribute__((packed)) MemoryRegion;
+} __attribute__((packed)) MemoryRegion, PrimitiveArrayRegion;
+
+/**
+ * Structure representing an object or object array in the heap. Is based on MemoryRegion
+ * but includes a pointer to the class file and a flexible array member for member(fields or array members) values.
+ */
+typedef struct njvmObjectRegion {
+    uint8_t metadata; // metadata flags (e.g., allocation status)
+    size_t size; // size of the data block
+    VirtualAddress next; // virtual address of the next memory region
+    ClassFile *classfile;
+    uint8_t member_values[]; // contains the member's(field's) values, superclass member values are stored recursively after this class
+} __attribute__((packed)) ObjectRegion, ObjectArrayRegion;
 
 typedef struct njvmHeapArea {
     njvmHeapSizing size; // total size of the heap area(including struct data)
@@ -60,6 +75,19 @@ VirtualAddress Malloc(const VirtualMachine *vm, size_t size);
  * @param addr the virtual address to free
  */
 void Free(const VirtualMachine *vm, VirtualAddress addr);
+
+ObjectRegion *AllocateObject(const VirtualMachine *vm, ClassFile *classfile);
+ObjectArrayRegion *AllocateObjectArray(const VirtualMachine *vm, ClassFile *classfile, size_t length);
+PrimitiveArrayRegion *AllocatePrimitiveArray(const VirtualMachine *vm, uint8_t element_size, size_t length);
+
+/**
+ * Loads a class file by its fully qualified name from the VM's loaded class files.
+ * @param vm the virtual machine instance
+ * @param bytes the byte array containing the class file name data
+ * @param length the length of the byte array
+ * @return the ClassFile structure if found, NULL otherwise
+ */
+ClassFile *LoadClassFile(const VirtualMachine *vm, const uint8_t *bytes, size_t length);
 
 /**
  * Function, which resizes a previously allocated block of memory in VM's heap memory area.

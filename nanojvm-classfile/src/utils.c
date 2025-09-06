@@ -40,7 +40,9 @@ ConstantPoolEntry GetClassFileName(const ClassFile *classfile)
 ConstantPoolEntry GetSuperClassName(const ClassFile *classfile)
 {
     void *addr = offset(classfile->if_off, -4);
-    return GetConstantPoolEntry(classfile, GetConstantPoolEntry(classfile, get16(&addr) - 1).info.class_info.name_index - 1);
+    const uint16_t value = get16(&addr) - 1;
+    if (value == -1) return (const ConstantPoolEntry) {0};
+    return GetConstantPoolEntry(classfile, GetConstantPoolEntry(classfile, value).info.class_info.name_index - 1);
 }
 
 int IteratorHasNext(const Iterator *it)

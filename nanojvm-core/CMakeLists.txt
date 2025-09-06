@@ -6,6 +6,7 @@ add_library(nanojvm-core STATIC
         src/interpreter.c
         src/util/heap.c
         src/util/memory_region_ll.c
+        src/object/allocator.c
 )
 
 target_include_directories(nanojvm-core

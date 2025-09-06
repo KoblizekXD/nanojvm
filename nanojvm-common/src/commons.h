@@ -88,5 +88,7 @@ uint32_t StringHashEx(const char *s, size_t length);
 void *MemoryCopy(void *dest, const void *src, size_t n);
 // memset implementation
 void *MemorySet(void *s, int c, size_t n);
+// memcmp implementation
+int MemoryCompare(const void *s1, const void *s2, size_t n);
 
 #endif //NANOJVM_COMMON_COMMONS_H

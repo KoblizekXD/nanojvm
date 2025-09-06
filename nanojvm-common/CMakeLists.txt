@@ -6,6 +6,7 @@ add_library(nanojvm-common STATIC
         src/strlen.c
         src/djb2.c
         src/memory.c
+        src/memcmp.c
 )
 
 target_include_directories(nanojvm-common
