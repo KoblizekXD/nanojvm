@@ -45,9 +45,22 @@ TEST TestFloatingPointUtilityFunctions(void)
     PASS();
 }
 
+TEST TestIntLongManipulation(void)
+{
+    CreateArrayStack(testing, 8);
+    PushInt(&testing, 0xAA55);
+    PushInt(&testing, 0x55AA);
+    const int64_t l = PopLong(&testing);
+    PushLong(&testing, l);
+    ASSERT(PopInt(&testing) == 0x55AA);
+    ASSERT(PopInt(&testing) == 0xAA55);
+    PASS();
+}
+
 SUITE(array_stack_suite)
 {
     RUN_TEST(TestBasicStackOperations);
     RUN_TEST(TestIntegralUtilityFunctions);
     RUN_TEST(TestFloatingPointUtilityFunctions);
+    RUN_TEST(TestIntLongManipulation);
 }

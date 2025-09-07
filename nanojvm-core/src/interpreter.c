@@ -9,7 +9,6 @@ typedef struct njvmInstructionHandlerParams {
     ArrayStack *localvars;
     uint8_t **pc;
     const CodeAttribute *code;
-
 } InstructionHandlerParams;
 
 typedef void (*instruction_handler)(
@@ -32,76 +31,100 @@ typedef void (*instruction_handler)(
     const CodeAttribute *code \
 )
 
+#define PASS_PARAMS vm, cf, method, opstack, localvars, pc, code
+#define PARAMS const VirtualMachine *vm, const ClassFile *cf, Method *method, ArrayStack *opstack, ArrayStack *localvars, uint8_t **pc, const CodeAttribute *code
+
+#define ReadByte(pc)   (*(pc) += 1, (*(pc))[-1])
+#define ReadShort(pc)  (uint16_t)(*(pc) += 2, ((*(pc))[-2] << 8) | (*(pc))[-1])
+
 INSTRUCTION_HANDLER(NOP)
 {
+    // No operation
 }
 
 INSTRUCTION_HANDLER(ACONST_NULL)
 {
+
 }
 
 INSTRUCTION_HANDLER(ICONST_M1)
 {
+    PushInt(opstack, -1);
 }
 
 INSTRUCTION_HANDLER(ICONST_0)
 {
+    PushInt(opstack, 0);
 }
 
 INSTRUCTION_HANDLER(ICONST_1)
 {
+    PushInt(opstack, 1);
 }
 
 INSTRUCTION_HANDLER(ICONST_2)
 {
+    PushInt(opstack, 2);
 }
 
 INSTRUCTION_HANDLER(ICONST_3)
 {
+    PushInt(opstack, 3);
 }
 
 INSTRUCTION_HANDLER(ICONST_4)
 {
+    PushInt(opstack, 4);
 }
 
 INSTRUCTION_HANDLER(ICONST_5)
 {
+    PushInt(opstack, 5);
 }
 
 INSTRUCTION_HANDLER(LCONST_0)
 {
+    PushLong(opstack, 0);
 }
 
 INSTRUCTION_HANDLER(LCONST_1)
 {
+    PushLong(opstack, 1);
 }
 
 INSTRUCTION_HANDLER(FCONST_0)
 {
+    PushFloat(opstack, 0.0f);
 }
 
 INSTRUCTION_HANDLER(FCONST_1)
 {
+    PushFloat(opstack, 1.0f);
 }
 
 INSTRUCTION_HANDLER(FCONST_2)
 {
+    PushFloat(opstack, 2.0f);
 }
 
 INSTRUCTION_HANDLER(DCONST_0)
 {
+    PushDouble(opstack, 0.0);
 }
 
 INSTRUCTION_HANDLER(DCONST_1)
 {
+    PushDouble(opstack, 1.0);
 }
 
 INSTRUCTION_HANDLER(BIPUSH)
 {
+    PushInt(opstack, ReadByte(pc));
 }
 
 INSTRUCTION_HANDLER(SIPUSH)
 {
+    PushInt(opstack, (int16_t) ReadShort(pc));
 }
 
 INSTRUCTION_HANDLER(LDC)
@@ -116,104 +139,144 @@ INSTRUCTION_HANDLER(LDC2_W)
 {
 }
 
+static void locals_to_opstack(PARAMS, const size_t size)
+{
+    const uint8_t index = ReadByte(pc);
+    uint8_t value[size];
+    MemoryCopy(&value, localvars->data + index * 4, size);
+    ArrayStackPush(opstack, &value, size);
+}
+
+static void local_to_opstack(PARAMS, const size_t size, const size_t index)
+{
+    uint8_t value[size];
+    MemoryCopy(&value, localvars->data + index * 4, size);
+    ArrayStackPush(opstack, &value, size);
+}
+
 INSTRUCTION_HANDLER(ILOAD)
 {
+    locals_to_opstack(PASS_PARAMS, sizeof(int32_t));
 }
 
 INSTRUCTION_HANDLER(LLOAD)
 {
+    locals_to_opstack(PASS_PARAMS, sizeof(int64_t));
 }
 
 INSTRUCTION_HANDLER(FLOAD)
 {
+    locals_to_opstack(PASS_PARAMS, sizeof(float));
 }
 
 INSTRUCTION_HANDLER(DLOAD)
 {
+    locals_to_opstack(PASS_PARAMS, sizeof(double));
 }
 
 INSTRUCTION_HANDLER(ALOAD)
 {
+    locals_to_opstack(PASS_PARAMS, sizeof(VirtualAddress));
 }
 
 INSTRUCTION_HANDLER(ILOAD_0)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int32_t), 0);
 }
 
 INSTRUCTION_HANDLER(ILOAD_1)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int32_t), 1);
 }
 
 INSTRUCTION_HANDLER(ILOAD_2)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int32_t), 2);
 }
 
 INSTRUCTION_HANDLER(ILOAD_3)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int32_t), 3);
 }
 
 INSTRUCTION_HANDLER(LLOAD_0)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int64_t), 0);
 }
 
 INSTRUCTION_HANDLER(LLOAD_1)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int64_t), 1);
 }
 
 INSTRUCTION_HANDLER(LLOAD_2)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int64_t), 2);
 }
 
 INSTRUCTION_HANDLER(LLOAD_3)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(int64_t), 3);
 }
 
 INSTRUCTION_HANDLER(FLOAD_0)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(float), 0);
 }
 
 INSTRUCTION_HANDLER(FLOAD_1)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(float), 1);
 }
 
 INSTRUCTION_HANDLER(FLOAD_2)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(float), 2);
 }
 
 INSTRUCTION_HANDLER(FLOAD_3)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(float), 3);
 }
 
 INSTRUCTION_HANDLER(DLOAD_0)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(double), 0);
 }
 
 INSTRUCTION_HANDLER(DLOAD_1)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(double), 1);
 }
 
 INSTRUCTION_HANDLER(DLOAD_2)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(double), 2);
 }
 
 INSTRUCTION_HANDLER(DLOAD_3)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(double), 3);
 }
 
 INSTRUCTION_HANDLER(ALOAD_0)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(VirtualAddress), 0);
 }
 
 INSTRUCTION_HANDLER(ALOAD_1)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(VirtualAddress), 1);
 }
 
 INSTRUCTION_HANDLER(ALOAD_2)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(VirtualAddress), 2);
 }
 
 INSTRUCTION_HANDLER(ALOAD_3)
 {
+    local_to_opstack(PASS_PARAMS, sizeof(VirtualAddress), 3);
 }
 
 INSTRUCTION_HANDLER(IALOAD)
@@ -248,104 +311,144 @@ INSTRUCTION_HANDLER(SALOAD)
 {
 }
 
+static void opstack_to_locals(PARAMS, const size_t size)
+{
+    const uint8_t index = ReadByte(pc);
+    uint8_t value[size];
+    ArrayStackPop(opstack, &value, size);
+    MemoryCopy(localvars->data + index * 4, &value, size);
+}
+
+static void opstack_to_local(PARAMS, const size_t size, const size_t index)
+{
+    uint8_t value[size];
+    ArrayStackPop(opstack, &value, size);
+    MemoryCopy(localvars->data + index * 4, &value, size);
+}
+
 INSTRUCTION_HANDLER(ISTORE)
 {
+    opstack_to_locals(PASS_PARAMS, sizeof(int32_t));
 }
 
 INSTRUCTION_HANDLER(LSTORE)
 {
+    opstack_to_locals(PASS_PARAMS, sizeof(int64_t));
 }
 
 INSTRUCTION_HANDLER(FSTORE)
 {
+    opstack_to_locals(PASS_PARAMS, sizeof(float));
 }
 
 INSTRUCTION_HANDLER(DSTORE)
 {
+    opstack_to_locals(PASS_PARAMS, sizeof(double));
 }
 
 INSTRUCTION_HANDLER(ASTORE)
 {
+    opstack_to_locals(PASS_PARAMS, sizeof(VirtualAddress));
 }
 
 INSTRUCTION_HANDLER(ISTORE_0)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int32_t), 0);
 }
 
 INSTRUCTION_HANDLER(ISTORE_1)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int32_t), 1);
 }
 
 INSTRUCTION_HANDLER(ISTORE_2)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int32_t), 2);
 }
 
 INSTRUCTION_HANDLER(ISTORE_3)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int32_t), 3);
 }
 
 INSTRUCTION_HANDLER(LSTORE_0)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int64_t), 0);
 }
 
 INSTRUCTION_HANDLER(LSTORE_1)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int64_t), 1);
 }
 
 INSTRUCTION_HANDLER(LSTORE_2)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int64_t), 2);
 }
 
 INSTRUCTION_HANDLER(LSTORE_3)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(int64_t), 3);
 }
 
 INSTRUCTION_HANDLER(FSTORE_0)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(float), 0);
 }
 
 INSTRUCTION_HANDLER(FSTORE_1)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(float), 1);
 }
 
 INSTRUCTION_HANDLER(FSTORE_2)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(float), 2);
 }
 
 INSTRUCTION_HANDLER(FSTORE_3)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(float), 3);
 }
 
 INSTRUCTION_HANDLER(DSTORE_0)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(double), 0);
 }
 
 INSTRUCTION_HANDLER(DSTORE_1)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(double), 1);
 }
 
 INSTRUCTION_HANDLER(DSTORE_2)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(double), 2);
 }
 
 INSTRUCTION_HANDLER(DSTORE_3)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(double), 3);
 }
 
 INSTRUCTION_HANDLER(ASTORE_0)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(VirtualAddress), 0);
 }
 
 INSTRUCTION_HANDLER(ASTORE_1)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(VirtualAddress), 1);
 }
 
 INSTRUCTION_HANDLER(ASTORE_2)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(VirtualAddress), 2);
 }
 
 INSTRUCTION_HANDLER(ASTORE_3)
 {
+    opstack_to_local(PASS_PARAMS, sizeof(VirtualAddress), 3);
 }
 
 INSTRUCTION_HANDLER(IASTORE)
@@ -382,114 +485,195 @@ INSTRUCTION_HANDLER(SASTORE)
 
 INSTRUCTION_HANDLER(POP)
 {
+    PopInt(opstack);
 }
 
 INSTRUCTION_HANDLER(POP2)
 {
+    PopLong(opstack);
 }
 
 INSTRUCTION_HANDLER(DUP)
 {
+    const int32_t value = PopInt(opstack);
+    PushInt(opstack, value);
+    PushInt(opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP_X1)
 {
+    const int32_t value = PopInt(opstack);
+    const int32_t value2 = PopInt(opstack);
+    PushInt(opstack, value);
+    PushInt(opstack, value2);
+    PushInt(opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP_X2)
 {
+    const int32_t value = PopInt(opstack);
+    const int64_t value2 = PopLong(opstack);
+    PushInt(opstack, value);
+    PushLong(opstack, value2);
+    PushInt(opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP2)
 {
+    const int64_t value = PopLong(opstack);
+    PushLong(opstack, value);
+    PushLong(opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP2_X1)
 {
+    const int64_t value = PopLong(opstack);
+    const int32_t value2 = PopInt(opstack);
+    PushLong(opstack, value);
+    PushInt(opstack, value2);
+    PushLong(opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP2_X2)
 {
+    const int64_t value = PopLong(opstack);
+    const int64_t value2 = PopLong(opstack);
+    PushLong(opstack, value);
+    PushLong(opstack, value2);
+    PushLong(opstack, value);
 }
 
 INSTRUCTION_HANDLER(SWAP)
 {
+    const int32_t value = PopInt(opstack);
+    const int32_t value2 = PopInt(opstack);
+    PushInt(opstack, value);
+    PushInt(opstack, value2);
 }
 
 INSTRUCTION_HANDLER(IADD)
 {
+    const int32_t value = PopInt(opstack);
+    const int32_t value2 = PopInt(opstack);
+    PushInt(opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(LADD)
 {
+    const int64_t value = PopLong(opstack);
+    const int64_t value2 = PopLong(opstack);
+    PushLong(opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(FADD)
 {
+    const float value = PopFloat(opstack);
+    const float value2 = PopFloat(opstack);
+    PushFloat(opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(DADD)
 {
+    const double value = PopDouble(opstack);
+    const double value2 = PopDouble(opstack);
+    PushDouble(opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(ISUB)
 {
+    const int32_t value = PopInt(opstack);
+    const int32_t value2 = PopInt(opstack);
+    PushInt(opstack, value2 - value);
 }
 
 INSTRUCTION_HANDLER(LSUB)
 {
+    const int64_t value = PopLong(opstack);
+    const int64_t value2 = PopLong(opstack);
+    PushLong(opstack, value2 - value);
 }
 
 INSTRUCTION_HANDLER(FSUB)
 {
+    const float value = PopFloat(opstack);
+    const float value2 = PopFloat(opstack);
+    PushFloat(opstack, value - value2);
 }
 
 INSTRUCTION_HANDLER(DSUB)
 {
+    const double value = PopDouble(opstack);
+    const double value2 = PopDouble(opstack);
+    PushDouble(opstack, value2 - value);
 }
 
 INSTRUCTION_HANDLER(IMUL)
 {
+    PushInt(opstack, PopInt(opstack) * PopInt(opstack));
 }
 
 INSTRUCTION_HANDLER(LMUL)
 {
+    PushLong(opstack, PopLong(opstack) * PopLong(opstack));
 }
 
 INSTRUCTION_HANDLER(FMUL)
 {
+    PushFloat(opstack, PopFloat(opstack) * PopFloat(opstack));
 }
 
 INSTRUCTION_HANDLER(DMUL)
 {
+    PushDouble(opstack, PopDouble(opstack) * PopDouble(opstack));
 }
 
 INSTRUCTION_HANDLER(IDIV)
 {
+    const int32_t value2 = PopInt(opstack);
+    const int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(LDIV)
 {
+    const int64_t value2 = PopLong(opstack);
+    const int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(FDIV)
 {
+    const float value2 = PopFloat(opstack);
+    const float value1 = PopFloat(opstack);
+    PushFloat(opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(DDIV)
 {
+    const double value2 = PopDouble(opstack);
+    const double value1 = PopDouble(opstack);
+    PushDouble(opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(IREM)
 {
+    const int32_t value2 = PopInt(opstack);
+    const int32_t value1 = PopInt(opstack);
+    PushInt(opstack, value1 % value2);
 }
 
 INSTRUCTION_HANDLER(LREM)
 {
+    const int64_t value2 = PopLong(opstack);
+    const int64_t value1 = PopLong(opstack);
+    PushLong(opstack, value1 % value2);
 }
 
 INSTRUCTION_HANDLER(FREM)
 {
+    const float value2 = PopFloat(opstack);
+    const float value1 = PopFloat(opstack);
+    PushFloat(opstack, ModuloFloat(value1, value2));
 }
 
 INSTRUCTION_HANDLER(DREM)
@@ -1072,8 +1256,9 @@ int bytecode_execute_internal(
 {
     while (*pc < code->code + code->code_length) {
         const uint8_t opcode = **pc;
+        (*pc)++;
         if (opcode < 0xFE) {
-            instruction_handlers[**pc](vm, cf, method, opstack, localvars, pc, code);
+            instruction_handlers[opcode](vm, cf, method, opstack, localvars, pc, code);
         } else if (opcode == 0xFE)
             instruction_IMPDEP1(vm, cf, method, opstack, localvars, pc, code);
         else instruction_IMPDEP2(vm, cf, method, opstack, localvars, pc, code);

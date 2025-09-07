@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef uintptr_t VirtualAddress;
+
 /**
  * A general purpose stack-like structure backed by a fixed-size array.
  * It supports pushing and popping of arbitrary data types by specifying their size.
@@ -28,17 +30,19 @@ void ArrayStackPop(ArrayStack *stack, void *out_data, size_t data_size);
 
 void ArrayStackClear(ArrayStack *stack);
 
-uint8_t PopByte(ArrayStack *stack);
-uint16_t PopShort(ArrayStack *stack);
-uint32_t PopInt(ArrayStack *stack);
-uint64_t PopLong(ArrayStack *stack);
+int8_t PopByte(ArrayStack *stack);
+int16_t PopShort(ArrayStack *stack);
+int32_t PopInt(ArrayStack *stack);
+int64_t PopLong(ArrayStack *stack);
 float PopFloat(ArrayStack *stack);
 double PopDouble(ArrayStack *stack);
+VirtualAddress PopAddress(ArrayStack *stack);
 
 // Use PushInt also for char, boolean, byte and short, as they are all 4 bytes in the stack
-void PushInt(ArrayStack *stack, uint32_t data);
-void PushLong(ArrayStack *stack, uint64_t data);
+void PushInt(ArrayStack *stack, int32_t data);
+void PushLong(ArrayStack *stack, int64_t data);
 void PushFloat(ArrayStack *stack, float data);
 void PushDouble(ArrayStack *stack, double data);
+void PushAddress(ArrayStack *stack, VirtualAddress data);
 
 #endif // NANOJVM_CORE_UTIL_ARRAY_STACK_H

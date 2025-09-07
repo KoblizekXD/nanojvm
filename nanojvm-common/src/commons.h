@@ -90,5 +90,9 @@ void *MemoryCopy(void *dest, const void *src, size_t n);
 void *MemorySet(void *s, int c, size_t n);
 // memcmp implementation
 int MemoryCompare(const void *s1, const void *s2, size_t n);
+// modf
+double ModuloDouble(double value, double divisor);
+// modff
+float ModuloFloat(float value, float divisor);
 
 #endif //NANOJVM_COMMON_COMMONS_H
