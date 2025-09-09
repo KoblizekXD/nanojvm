@@ -60,6 +60,11 @@ typedef struct njvmHeapArea {
 
 typedef struct njvmVirtualMachine VirtualMachine;
 
+typedef struct njvmContextExceptionFlag {
+    struct CONSTANT_Utf8_info *class_name;
+    struct CONSTANT_Utf8_info *message;
+} ContextExceptionFlag;
+
 typedef struct njvmFrameContext {
     const VirtualMachine *vm;
     const ClassFile *cf;
@@ -69,13 +74,8 @@ typedef struct njvmFrameContext {
     uint8_t **pc;
     const CodeAttribute *code;
     struct njvmFrameContext *prev;
+    ContextExceptionFlag exception;
 } ThreadFrameContext;
-
-typedef void(*njvmExceptionTrap)(
-    ThreadFrameContext *frame_stack,
-    struct CONSTANT_Class_info *exception_class,
-    struct CONSTANT_Utf8_info *message
-);
 
 /**
  * Function, which allocates a block of memory in VM's heap memory area.
@@ -133,22 +133,6 @@ struct njvmVirtualMachine {
     size_t classfile_count;
     ClassFile *classfiles;
 };
-
-#define RESULT_OK 0
-#define RESULT_EXIT 1
-#define RESULT_EXCEPTION 2
-
-/**
- * Structure representing the result of a method or frame execution.
- * The value field can hold different types based on the execution outcome:
- * - For normal returns, it holds the NULL
- * - For exceptions, it holds a pointer to the exception object
- * - For exit signals, it holds the exit code as an integer
- */
-typedef struct njvmExecutionResult {
-    int state;
-    uintptr_t value;
-} ExecutionResult;
 
 /**
  * Creates a new VirtualMachine instance with provided parameters. This function will

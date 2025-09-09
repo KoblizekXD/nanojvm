@@ -1,5 +1,6 @@
 #include <classfile.h>
 #include <nanojvm.h>
+#include <iterators.h>
 
 typedef void (*instruction_handler)(
     ThreadFrameContext *ctx
@@ -956,26 +957,32 @@ INSTRUCTION_HANDLER(LOOKUPSWITCH)
 
 INSTRUCTION_HANDLER(IRETURN)
 {
+    if (ctx->prev) PushInt(ctx->prev->opstack, PopInt(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(LRETURN)
 {
+    if (ctx->prev) PushLong(ctx->prev->opstack, PopLong(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(FRETURN)
 {
+    if (ctx->prev) PushFloat(ctx->prev->opstack, PopFloat(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(DRETURN)
 {
+    if (ctx->prev) PushDouble(ctx->prev->opstack, PopDouble(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(ARETURN)
 {
+    if (ctx->prev) PushAddress(ctx->prev->opstack, PopAddress(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(RETURN)
 {
+    // Basically noop, but ends execution of the current method
 }
 
 INSTRUCTION_HANDLER(WIDE)
@@ -1237,7 +1244,8 @@ int ThreadCurrentExecute(const VirtualMachine *vm, const ClassFile *classfile, M
         .localvars = &localvars,
         .pc = &pc,
         .code = &code,
-        .prev = ctx
+        .prev = ctx,
+        .exception = (ContextExceptionFlag) {0}
     };
 
     while (pc < code.code + code.code_length) {
@@ -1245,9 +1253,44 @@ int ThreadCurrentExecute(const VirtualMachine *vm, const ClassFile *classfile, M
         (*pc)++;
         if (opcode < 0xFE) {
             instruction_handlers[opcode](&frame);
+            if (opcode >= 172 && opcode <= 177) break;
         } else if (opcode == 0xFE)
             instruction_IMPDEP1(&frame);
         else instruction_IMPDEP2(&frame);
+
+        if (frame.exception.class_name != NULL) {
+            for (int i = 0; i < code.exception_table_length; ++i) {
+                const ExceptionTableEntry entry = code.exception_table[i];
+                if ((pc - code.code) - 1 >= entry.start_pc && (pc - code.code) - 1 < entry.end_pc) {
+                    if (entry.catch_type == 0) { // finally block
+                        pc = code.code + entry.handler_pc;
+                        frame.exception = (ContextExceptionFlag) {0};
+                        break;
+                    }
+                    ConstantPoolEntry cp_info = GetConstantPoolEntry(classfile, entry.catch_type - 1);
+                    if (cp_info.tag != CONSTANT_Class) continue;
+                    cp_info = GetConstantPoolEntry(classfile, cp_info.info.class_info.name_index - 1);
+                    if (cp_info.tag != CONSTANT_Utf8) continue;
+                    const struct CONSTANT_Utf8_info class_name = cp_info.info.utf8_info;
+                    if (class_name.length == frame.exception.class_name->length
+                        && MemoryCompare(class_name.bytes, frame.exception.class_name->bytes, class_name.length) == 0) {
+                        pc = code.code + entry.handler_pc;
+                        const VirtualAddress exception_obj = PopAddress(frame.opstack);
+                        ArrayStackClear(frame.opstack);
+                        PushAddress(frame.opstack, exception_obj);
+                        frame.exception = (ContextExceptionFlag) {0};
+                        break;
+                    }
+                }
+            }
+            if (frame.exception.class_name != NULL) { // if exception not handled, propagate it to the previous frame
+                if (ctx) {
+                    ctx->exception = frame.exception;
+                    return 0;
+                }
+                return 1;
+            }
+        }
     }
     return 0;
 }
