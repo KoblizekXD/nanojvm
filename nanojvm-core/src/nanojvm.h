@@ -60,6 +60,23 @@ typedef struct njvmHeapArea {
 
 typedef struct njvmVirtualMachine VirtualMachine;
 
+typedef struct njvmFrameContext {
+    const VirtualMachine *vm;
+    const ClassFile *cf;
+    Method *method;
+    ArrayStack *opstack;
+    ArrayStack *localvars;
+    uint8_t **pc;
+    const CodeAttribute *code;
+    struct njvmFrameContext *prev;
+} ThreadFrameContext;
+
+typedef void(*njvmExceptionTrap)(
+    ThreadFrameContext *frame_stack,
+    struct CONSTANT_Class_info *exception_class,
+    struct CONSTANT_Utf8_info *message
+);
+
 /**
  * Function, which allocates a block of memory in VM's heap memory area.
  * @param vm the virtual machine instance
@@ -166,9 +183,10 @@ void InitializeHeap(VirtualMachine *vm);
  * @param vm the VirtualMachine instance to execute the method in
  * @param classfile the class file containing the method to execute
  * @param method the method to begin execution from
+ * @param ctx the thread frame context to use for execution, leave as NULL to create a new frame stack
  * @return status code returned from execution (usually 0 for success, non-zero for error)
  */
-int ThreadCurrentExecute(const VirtualMachine *vm, const ClassFile *classfile, Method *method);
+int ThreadCurrentExecute(const VirtualMachine *vm, const ClassFile *classfile, Method *method, ThreadFrameContext *ctx);
 
 /**
  * Destroys the given VirtualMachine instance, freeing all associated resources.

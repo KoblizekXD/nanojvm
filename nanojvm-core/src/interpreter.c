@@ -1,38 +1,16 @@
 #include <classfile.h>
 #include <nanojvm.h>
 
-typedef struct njvmInstructionHandlerParams {
-    const VirtualMachine *vm;
-    const ClassFile *cf;
-    Method *method;
-    ArrayStack *opstack;
-    ArrayStack *localvars;
-    uint8_t **pc;
-    const CodeAttribute *code;
-} InstructionHandlerParams;
-
 typedef void (*instruction_handler)(
-    const VirtualMachine *vm,
-    const ClassFile *cf,
-    Method *method,
-    ArrayStack *opstack,
-    ArrayStack *localvars,
-    uint8_t **pc,
-    const CodeAttribute *code
+    ThreadFrameContext *ctx
 );
 
 #define INSTRUCTION_HANDLER(NAME) void instruction_##NAME( \
-    const VirtualMachine *vm, \
-    const ClassFile *cf, \
-    Method *method, \
-    ArrayStack *opstack, \
-    ArrayStack *localvars, \
-    uint8_t **pc, \
-    const CodeAttribute *code \
+    ThreadFrameContext *ctx \
 )
 
-#define PASS_PARAMS vm, cf, method, opstack, localvars, pc, code
-#define PARAMS const VirtualMachine *vm, const ClassFile *cf, Method *method, ArrayStack *opstack, ArrayStack *localvars, uint8_t **pc, const CodeAttribute *code
+#define PASS_PARAMS ctx
+#define PARAMS ThreadFrameContext *ctx
 
 #define ReadByte(pc)   (*(pc) += 1, (*(pc))[-1])
 #define ReadShort(pc)  (uint16_t)(*(pc) += 2, ((*(pc))[-2] << 8) | (*(pc))[-1])
@@ -49,82 +27,82 @@ INSTRUCTION_HANDLER(ACONST_NULL)
 
 INSTRUCTION_HANDLER(ICONST_M1)
 {
-    PushInt(opstack, -1);
+    PushInt(ctx->opstack, -1);
 }
 
 INSTRUCTION_HANDLER(ICONST_0)
 {
-    PushInt(opstack, 0);
+    PushInt(ctx->opstack, 0);
 }
 
 INSTRUCTION_HANDLER(ICONST_1)
 {
-    PushInt(opstack, 1);
+    PushInt(ctx->opstack, 1);
 }
 
 INSTRUCTION_HANDLER(ICONST_2)
 {
-    PushInt(opstack, 2);
+    PushInt(ctx->opstack, 2);
 }
 
 INSTRUCTION_HANDLER(ICONST_3)
 {
-    PushInt(opstack, 3);
+    PushInt(ctx->opstack, 3);
 }
 
 INSTRUCTION_HANDLER(ICONST_4)
 {
-    PushInt(opstack, 4);
+    PushInt(ctx->opstack, 4);
 }
 
 INSTRUCTION_HANDLER(ICONST_5)
 {
-    PushInt(opstack, 5);
+    PushInt(ctx->opstack, 5);
 }
 
 INSTRUCTION_HANDLER(LCONST_0)
 {
-    PushLong(opstack, 0);
+    PushLong(ctx->opstack, 0);
 }
 
 INSTRUCTION_HANDLER(LCONST_1)
 {
-    PushLong(opstack, 1);
+    PushLong(ctx->opstack, 1);
 }
 
 INSTRUCTION_HANDLER(FCONST_0)
 {
-    PushFloat(opstack, 0.0f);
+    PushFloat(ctx->opstack, 0.0f);
 }
 
 INSTRUCTION_HANDLER(FCONST_1)
 {
-    PushFloat(opstack, 1.0f);
+    PushFloat(ctx->opstack, 1.0f);
 }
 
 INSTRUCTION_HANDLER(FCONST_2)
 {
-    PushFloat(opstack, 2.0f);
+    PushFloat(ctx->opstack, 2.0f);
 }
 
 INSTRUCTION_HANDLER(DCONST_0)
 {
-    PushDouble(opstack, 0.0);
+    PushDouble(ctx->opstack, 0.0);
 }
 
 INSTRUCTION_HANDLER(DCONST_1)
 {
-    PushDouble(opstack, 1.0);
+    PushDouble(ctx->opstack, 1.0);
 }
 
 INSTRUCTION_HANDLER(BIPUSH)
 {
-    PushInt(opstack, ReadByte(pc));
+    PushInt(ctx->opstack, ReadByte(ctx->pc));
 }
 
 INSTRUCTION_HANDLER(SIPUSH)
 {
-    PushInt(opstack, (int16_t) ReadShort(pc));
+    PushInt(ctx->opstack, (int16_t) ReadShort(ctx->pc));
 }
 
 INSTRUCTION_HANDLER(LDC)
@@ -141,17 +119,17 @@ INSTRUCTION_HANDLER(LDC2_W)
 
 static void locals_to_opstack(PARAMS, const size_t size)
 {
-    const uint8_t index = ReadByte(pc);
+    const uint8_t index = ReadByte(ctx->pc);
     uint8_t value[size];
-    MemoryCopy(&value, localvars->data + index * 4, size);
-    ArrayStackPush(opstack, &value, size);
+    MemoryCopy(&value, ctx->localvars->data + index * 4, size);
+    ArrayStackPush(ctx->opstack, &value, size);
 }
 
 static void local_to_opstack(PARAMS, const size_t size, const size_t index)
 {
     uint8_t value[size];
-    MemoryCopy(&value, localvars->data + index * 4, size);
-    ArrayStackPush(opstack, &value, size);
+    MemoryCopy(&value, ctx->localvars->data + index * 4, size);
+    ArrayStackPush(ctx->opstack, &value, size);
 }
 
 INSTRUCTION_HANDLER(ILOAD)
@@ -313,17 +291,17 @@ INSTRUCTION_HANDLER(SALOAD)
 
 static void opstack_to_locals(PARAMS, const size_t size)
 {
-    const uint8_t index = ReadByte(pc);
+    const uint8_t index = ReadByte(ctx->pc);
     uint8_t value[size];
-    ArrayStackPop(opstack, &value, size);
-    MemoryCopy(localvars->data + index * 4, &value, size);
+    ArrayStackPop(ctx->opstack, &value, size);
+    MemoryCopy(ctx->localvars->data + index * 4, &value, size);
 }
 
 static void opstack_to_local(PARAMS, const size_t size, const size_t index)
 {
     uint8_t value[size];
-    ArrayStackPop(opstack, &value, size);
-    MemoryCopy(localvars->data + index * 4, &value, size);
+    ArrayStackPop(ctx->opstack, &value, size);
+    MemoryCopy(ctx->localvars->data + index * 4, &value, size);
 }
 
 INSTRUCTION_HANDLER(ISTORE)
@@ -485,195 +463,195 @@ INSTRUCTION_HANDLER(SASTORE)
 
 INSTRUCTION_HANDLER(POP)
 {
-    PopInt(opstack);
+    PopInt(ctx->opstack);
 }
 
 INSTRUCTION_HANDLER(POP2)
 {
-    PopLong(opstack);
+    PopLong(ctx->opstack);
 }
 
 INSTRUCTION_HANDLER(DUP)
 {
-    const int32_t value = PopInt(opstack);
-    PushInt(opstack, value);
-    PushInt(opstack, value);
+    const int32_t value = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value);
+    PushInt(ctx->opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP_X1)
 {
-    const int32_t value = PopInt(opstack);
-    const int32_t value2 = PopInt(opstack);
-    PushInt(opstack, value);
-    PushInt(opstack, value2);
-    PushInt(opstack, value);
+    const int32_t value = PopInt(ctx->opstack);
+    const int32_t value2 = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value);
+    PushInt(ctx->opstack, value2);
+    PushInt(ctx->opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP_X2)
 {
-    const int32_t value = PopInt(opstack);
-    const int64_t value2 = PopLong(opstack);
-    PushInt(opstack, value);
-    PushLong(opstack, value2);
-    PushInt(opstack, value);
+    const int32_t value = PopInt(ctx->opstack);
+    const int64_t value2 = PopLong(ctx->opstack);
+    PushInt(ctx->opstack, value);
+    PushLong(ctx->opstack, value2);
+    PushInt(ctx->opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP2)
 {
-    const int64_t value = PopLong(opstack);
-    PushLong(opstack, value);
-    PushLong(opstack, value);
+    const int64_t value = PopLong(ctx->opstack);
+    PushLong(ctx->opstack, value);
+    PushLong(ctx->opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP2_X1)
 {
-    const int64_t value = PopLong(opstack);
-    const int32_t value2 = PopInt(opstack);
-    PushLong(opstack, value);
-    PushInt(opstack, value2);
-    PushLong(opstack, value);
+    const int64_t value = PopLong(ctx->opstack);
+    const int32_t value2 = PopInt(ctx->opstack);
+    PushLong(ctx->opstack, value);
+    PushInt(ctx->opstack, value2);
+    PushLong(ctx->opstack, value);
 }
 
 INSTRUCTION_HANDLER(DUP2_X2)
 {
-    const int64_t value = PopLong(opstack);
-    const int64_t value2 = PopLong(opstack);
-    PushLong(opstack, value);
-    PushLong(opstack, value2);
-    PushLong(opstack, value);
+    const int64_t value = PopLong(ctx->opstack);
+    const int64_t value2 = PopLong(ctx->opstack);
+    PushLong(ctx->opstack, value);
+    PushLong(ctx->opstack, value2);
+    PushLong(ctx->opstack, value);
 }
 
 INSTRUCTION_HANDLER(SWAP)
 {
-    const int32_t value = PopInt(opstack);
-    const int32_t value2 = PopInt(opstack);
-    PushInt(opstack, value);
-    PushInt(opstack, value2);
+    const int32_t value = PopInt(ctx->opstack);
+    const int32_t value2 = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value);
+    PushInt(ctx->opstack, value2);
 }
 
 INSTRUCTION_HANDLER(IADD)
 {
-    const int32_t value = PopInt(opstack);
-    const int32_t value2 = PopInt(opstack);
-    PushInt(opstack, value + value2);
+    const int32_t value = PopInt(ctx->opstack);
+    const int32_t value2 = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(LADD)
 {
-    const int64_t value = PopLong(opstack);
-    const int64_t value2 = PopLong(opstack);
-    PushLong(opstack, value + value2);
+    const int64_t value = PopLong(ctx->opstack);
+    const int64_t value2 = PopLong(ctx->opstack);
+    PushLong(ctx->opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(FADD)
 {
-    const float value = PopFloat(opstack);
-    const float value2 = PopFloat(opstack);
-    PushFloat(opstack, value + value2);
+    const float value = PopFloat(ctx->opstack);
+    const float value2 = PopFloat(ctx->opstack);
+    PushFloat(ctx->opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(DADD)
 {
-    const double value = PopDouble(opstack);
-    const double value2 = PopDouble(opstack);
-    PushDouble(opstack, value + value2);
+    const double value = PopDouble(ctx->opstack);
+    const double value2 = PopDouble(ctx->opstack);
+    PushDouble(ctx->opstack, value + value2);
 }
 
 INSTRUCTION_HANDLER(ISUB)
 {
-    const int32_t value = PopInt(opstack);
-    const int32_t value2 = PopInt(opstack);
-    PushInt(opstack, value2 - value);
+    const int32_t value = PopInt(ctx->opstack);
+    const int32_t value2 = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value2 - value);
 }
 
 INSTRUCTION_HANDLER(LSUB)
 {
-    const int64_t value = PopLong(opstack);
-    const int64_t value2 = PopLong(opstack);
-    PushLong(opstack, value2 - value);
+    const int64_t value = PopLong(ctx->opstack);
+    const int64_t value2 = PopLong(ctx->opstack);
+    PushLong(ctx->opstack, value2 - value);
 }
 
 INSTRUCTION_HANDLER(FSUB)
 {
-    const float value = PopFloat(opstack);
-    const float value2 = PopFloat(opstack);
-    PushFloat(opstack, value - value2);
+    const float value = PopFloat(ctx->opstack);
+    const float value2 = PopFloat(ctx->opstack);
+    PushFloat(ctx->opstack, value - value2);
 }
 
 INSTRUCTION_HANDLER(DSUB)
 {
-    const double value = PopDouble(opstack);
-    const double value2 = PopDouble(opstack);
-    PushDouble(opstack, value2 - value);
+    const double value = PopDouble(ctx->opstack);
+    const double value2 = PopDouble(ctx->opstack);
+    PushDouble(ctx->opstack, value2 - value);
 }
 
 INSTRUCTION_HANDLER(IMUL)
 {
-    PushInt(opstack, PopInt(opstack) * PopInt(opstack));
+    PushInt(ctx->opstack, PopInt(ctx->opstack) * PopInt(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(LMUL)
 {
-    PushLong(opstack, PopLong(opstack) * PopLong(opstack));
+    PushLong(ctx->opstack, PopLong(ctx->opstack) * PopLong(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(FMUL)
 {
-    PushFloat(opstack, PopFloat(opstack) * PopFloat(opstack));
+    PushFloat(ctx->opstack, PopFloat(ctx->opstack) * PopFloat(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(DMUL)
 {
-    PushDouble(opstack, PopDouble(opstack) * PopDouble(opstack));
+    PushDouble(ctx->opstack, PopDouble(ctx->opstack) * PopDouble(ctx->opstack));
 }
 
 INSTRUCTION_HANDLER(IDIV)
 {
-    const int32_t value2 = PopInt(opstack);
-    const int32_t value1 = PopInt(opstack);
-    PushInt(opstack, value1 / value2);
+    const int32_t value2 = PopInt(ctx->opstack);
+    const int32_t value1 = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(LDIV)
 {
-    const int64_t value2 = PopLong(opstack);
-    const int64_t value1 = PopLong(opstack);
-    PushLong(opstack, value1 / value2);
+    const int64_t value2 = PopLong(ctx->opstack);
+    const int64_t value1 = PopLong(ctx->opstack);
+    PushLong(ctx->opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(FDIV)
 {
-    const float value2 = PopFloat(opstack);
-    const float value1 = PopFloat(opstack);
-    PushFloat(opstack, value1 / value2);
+    const float value2 = PopFloat(ctx->opstack);
+    const float value1 = PopFloat(ctx->opstack);
+    PushFloat(ctx->opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(DDIV)
 {
-    const double value2 = PopDouble(opstack);
-    const double value1 = PopDouble(opstack);
-    PushDouble(opstack, value1 / value2);
+    const double value2 = PopDouble(ctx->opstack);
+    const double value1 = PopDouble(ctx->opstack);
+    PushDouble(ctx->opstack, value1 / value2);
 }
 
 INSTRUCTION_HANDLER(IREM)
 {
-    const int32_t value2 = PopInt(opstack);
-    const int32_t value1 = PopInt(opstack);
-    PushInt(opstack, value1 % value2);
+    const int32_t value2 = PopInt(ctx->opstack);
+    const int32_t value1 = PopInt(ctx->opstack);
+    PushInt(ctx->opstack, value1 % value2);
 }
 
 INSTRUCTION_HANDLER(LREM)
 {
-    const int64_t value2 = PopLong(opstack);
-    const int64_t value1 = PopLong(opstack);
-    PushLong(opstack, value1 % value2);
+    const int64_t value2 = PopLong(ctx->opstack);
+    const int64_t value1 = PopLong(ctx->opstack);
+    PushLong(ctx->opstack, value1 % value2);
 }
 
 INSTRUCTION_HANDLER(FREM)
 {
-    const float value2 = PopFloat(opstack);
-    const float value1 = PopFloat(opstack);
-    PushFloat(opstack, ModuloFloat(value1, value2));
+    const float value2 = PopFloat(ctx->opstack);
+    const float value1 = PopFloat(ctx->opstack);
+    PushFloat(ctx->opstack, ModuloFloat(value1, value2));
 }
 
 INSTRUCTION_HANDLER(DREM)
@@ -1244,24 +1222,32 @@ instruction_handler instruction_handlers[205] = {
     instruction_IMPDEP2
 };
 
-int bytecode_execute_internal(
-    const VirtualMachine *vm,
-    const ClassFile *cf,
-    Method *method,
-    ArrayStack *opstack,
-    ArrayStack *localvars,
-    uint8_t **pc,
-    const CodeAttribute *code
-)
+int ThreadCurrentExecute(const VirtualMachine *vm, const ClassFile *classfile, Method *method, ThreadFrameContext *ctx)
 {
-    while (*pc < code->code + code->code_length) {
-        const uint8_t opcode = **pc;
+    const CodeAttribute code = GetCodeAttribute(classfile, method->code_attr_off);
+    CreateArrayStack(opstack, code.max_stack * sizeof(uint32_t));
+    CreateArrayStack(localvars, code.max_locals * sizeof(uint32_t));
+    uint8_t *pc = code.code;
+
+    ThreadFrameContext frame = (ThreadFrameContext) {
+        .vm = vm,
+        .cf = classfile,
+        .method = method,
+        .opstack = &opstack,
+        .localvars = &localvars,
+        .pc = &pc,
+        .code = &code,
+        .prev = ctx
+    };
+
+    while (pc < code.code + code.code_length) {
+        const uint8_t opcode = *pc;
         (*pc)++;
         if (opcode < 0xFE) {
-            instruction_handlers[opcode](vm, cf, method, opstack, localvars, pc, code);
+            instruction_handlers[opcode](&frame);
         } else if (opcode == 0xFE)
-            instruction_IMPDEP1(vm, cf, method, opstack, localvars, pc, code);
-        else instruction_IMPDEP2(vm, cf, method, opstack, localvars, pc, code);
+            instruction_IMPDEP1(&frame);
+        else instruction_IMPDEP2(&frame);
     }
     return 0;
 }

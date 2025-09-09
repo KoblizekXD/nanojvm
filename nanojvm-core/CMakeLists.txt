@@ -1,7 +1,6 @@
 
 add_library(nanojvm-core STATIC
         src/nanojvm.c
-        src/executor.c
         src/util/array_stack.c
         src/interpreter.c
         src/util/heap.c
